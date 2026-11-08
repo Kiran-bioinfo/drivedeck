@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, Suspense, lazy } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { signInWithPopup, signInWithRedirect } from "firebase/auth";
 import { ArrowRight, Award, BadgeCheck, FolderGit2, Loader2, X } from "lucide-react";
@@ -8,20 +8,75 @@ import { COPY } from "../lib/copy";
 import { useAuth } from "../context/AuthContext";
 import { GoogleIcon } from "../components/GoogleIcon";
 
+// three lives in its own lazy chunk — the landing-pitch entry point only (README "Why three")
+const HeroCanvas = lazy(() => import("../components/HeroCanvas"));
+
 const CARD_ICONS = [BadgeCheck, FolderGit2, Award] as const;
 const CARD_PANELS = [
   "bg-accent text-white",
-  "bg-blush text-ink",
-  "bg-surface border border-line shadow-card text-ink",
+  "bg-mint text-ink border border-ink/10",
+  "bg-cream text-ink border border-ink/10",
 ] as const;
 const CARD_TILE = [
   "bg-white/20 text-white",
   "bg-white/70 text-ink",
   "bg-brand/10 text-brand",
 ] as const;
+const CARD_BODY = ["text-white/80", "text-ink/70", "text-ink-muted"] as const;
+
+const REDUCED = "(prefers-reduced-motion: reduce)";
+
+// scroll-triggered entrance — IntersectionObserver, no deps
+function Reveal({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (window.matchMedia(REDUCED).matches) {
+      setShown(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            setShown(true);
+            io.disconnect();
+          }
+        }
+      },
+      { threshold: 0.15 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return (
+    <div
+      ref={ref}
+      style={{ transitionDelay: `${delay}ms` }}
+      className={`transition-all duration-700 ease-out will-change-transform ${shown ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"} ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+// pointer: fine only — subtle 3D card tilt on mouse move
+function tiltMove(e: React.MouseEvent<HTMLElement>) {
+  if (!window.matchMedia("(pointer: fine)").matches || window.matchMedia(REDUCED).matches) return;
+  const el = e.currentTarget;
+  const r = el.getBoundingClientRect();
+  const x = (e.clientX - r.left) / r.width - 0.5;
+  const y = (e.clientY - r.top) / r.height - 0.5;
+  el.style.transform = `perspective(900px) rotateX(${(-y * 6).toFixed(2)}deg) rotateY(${(x * 9).toFixed(2)}deg) translateY(-3px)`;
+}
+function tiltReset(e: React.MouseEvent<HTMLElement>) {
+  e.currentTarget.style.transform = "";
+}
 
 // PRD §F0 — pitch in two screens; signed-in visitors skip straight to the dashboard.
-// Design: SVG reference — indigo/blush/white panels, phone-mockup hero, sign-in card.
+// Interactive hero: WebGL cluster behind the copy + CSS phone mockup (README "Why three").
 export function Landing() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -66,7 +121,7 @@ export function Landing() {
 
   return (
     <div className="min-h-screen bg-canvas">
-      <header className="max-w-[1024px] mx-auto flex items-center justify-between h-16 px-4">
+      <header className="max-w-[1024px] mx-auto flex items-center justify-between h-16 px-4 relative z-20">
         <span className="font-bold text-lg text-brand">DriveDeck</span>
         <nav className="flex items-center gap-4">
           <a href="#features" className="text-[15px] text-ink-muted hover:text-ink hidden sm:inline-block">
@@ -75,33 +130,134 @@ export function Landing() {
           <a href="#how" className="text-[15px] text-ink-muted hover:text-ink hidden sm:inline-block">
             {COPY.landing.navHow}
           </a>
-          <Link to="/resources" className="text-[15px] text-ink-muted hover:text-ink">
+          <Link to="/resources" className="text-[15px] text-ink-muted hover:text-ink hidden xs:inline-block">
             {COPY.landing.navResources}
           </Link>
           <button
             type="button"
             onClick={() => { setSignErr(null); setSignInOpen(true); }}
-            className="h-9 px-3 rounded-lg bg-brand text-white text-[14px] font-semibold hover:bg-brand-dark transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+            className="h-9 px-3 rounded-lg bg-ink text-white text-[14px] font-semibold hover:bg-ink/85 transition-all hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
           >
             {COPY.landing.navGetStarted}
           </button>
         </nav>
       </header>
 
-      {/* hero — copy left, phone mockup right (stacks at 375px) */}
-      <section className="max-w-[1024px] mx-auto px-4 pt-8 lg:pt-14 pb-12 grid lg:grid-cols-[1.1fr_0.9fr] gap-10 items-center">
-        <div>
-          <p className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-blush text-ink text-[13px] font-medium mb-4">
-            <BadgeCheck size={14} strokeWidth={2.5} aria-hidden />
-            {COPY.landing.trust}
-          </p>
-          <h1 className="text-[34px] lg:text-[46px] leading-[1.12] font-bold tracking-tight mb-4">
-            {COPY.landing.h1}
-          </h1>
-          <p className="text-[17px] lg:text-[19px] text-ink-muted max-w-[520px] mb-8">
-            {COPY.landing.support}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 max-w-[420px]">
+      {/* hero — WebGL cluster full-bleed behind copy + phone mockup */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-mint via-canvas to-canvas">
+        <Suspense fallback={null}>
+          <HeroCanvas />
+        </Suspense>
+        <div className="relative z-10 max-w-[1024px] mx-auto px-4 pt-10 lg:pt-16 pb-14 grid lg:grid-cols-[1.05fr_0.95fr] gap-8 items-center">
+          <div>
+            <p className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-white/80 backdrop-blur border border-ink/10 text-ink text-[13px] font-medium mb-4">
+              <BadgeCheck size={14} strokeWidth={2.5} aria-hidden className="text-success" />
+              {COPY.landing.trust}
+            </p>
+            <h1 className="text-[34px] lg:text-[46px] leading-[1.12] font-bold tracking-tight mb-4">
+              {COPY.landing.h1}
+            </h1>
+            <p className="text-[17px] lg:text-[19px] text-ink-muted max-w-[520px] mb-8">
+              {COPY.landing.support}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 max-w-[420px]">
+              <button
+                type="button"
+                onClick={() => { setSignErr(null); setSignInOpen(true); }}
+                className="h-12 px-6 rounded-lg bg-brand text-white text-[15px] font-semibold hover:bg-brand-dark hover:-translate-y-0.5 shadow-elev transition-all focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+              >
+                {COPY.landing.primaryCta}
+              </button>
+              <Link
+                to="/u/kiran"
+                className="h-12 px-6 rounded-lg border border-line bg-white/80 backdrop-blur text-[15px] font-semibold text-ink hover:bg-surface transition-all focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 flex items-center justify-center"
+              >
+                {COPY.landing.secondaryCta}
+              </Link>
+            </div>
+          </div>
+
+          <div className="relative">
+            <div className="animate-float-slow">
+              <PhoneMockup />
+            </div>
+            <span aria-hidden className="absolute -left-1 top-6 h-8 px-3 rounded-full bg-blush text-ink text-[12px] font-semibold inline-flex items-center shadow-elev -rotate-3 animate-float">
+              Offer! 🎉
+            </span>
+            <span aria-hidden className="absolute right-0 bottom-10 h-8 px-3 rounded-full bg-white/90 backdrop-blur border border-ink/10 text-ink text-[12px] font-semibold inline-flex items-center gap-1 shadow-elev rotate-2 animate-float-slow">
+              <BadgeCheck size={13} className="text-success" aria-hidden />
+              4-day streak
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* 3 USPs — indigo / mint / cream panels, scroll-revealed, tilt on hover */}
+      <section id="features" className="max-w-[1024px] mx-auto px-4 pb-14">
+        <div className="grid sm:grid-cols-3 gap-4">
+          {COPY.landing.cards.map((c, i) => {
+            const Icon = CARD_ICONS[i];
+            return (
+              <Reveal key={c.title} delay={i * 120}>
+                <article
+                  onMouseMove={tiltMove}
+                  onMouseLeave={tiltReset}
+                  className={`rounded-xl p-5 h-full transition-transform duration-300 will-change-transform ${CARD_PANELS[i]}`}
+                >
+                  <span aria-hidden className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${CARD_TILE[i]}`}>
+                    <Icon size={20} strokeWidth={2} />
+                  </span>
+                  <h3 className="font-semibold text-[15px] mb-2">{c.title}</h3>
+                  <p className={`text-[14px] ${CARD_BODY[i]}`}>{c.body}</p>
+                </article>
+              </Reveal>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* how it works — full-bleed indigo block, staggered reveal */}
+      <section id="how" className="bg-accent text-white relative overflow-hidden">
+        <span aria-hidden className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/5" />
+        <span aria-hidden className="absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-white/5" />
+        <div className="max-w-[680px] mx-auto px-4 py-12 relative">
+          <Reveal>
+            <h2 className="text-[22px] font-bold mb-1">{COPY.landing.navHow}</h2>
+            <p className="text-white/70 text-[15px] mb-6">{COPY.landing.signInBody}</p>
+          </Reveal>
+          <ol className="flex flex-col gap-3">
+            {COPY.landing.howSteps.map((step, i) => (
+              <Reveal key={i} delay={i * 130}>
+                <li className="bg-white/10 rounded-xl p-4 flex items-center gap-3">
+                  <span
+                    aria-hidden
+                    className="w-7 h-7 rounded-full bg-white text-accent text-[13px] font-bold flex items-center justify-center shrink-0"
+                  >
+                    {i + 1}
+                  </span>
+                  <span className="text-[15px]">{step}</span>
+                </li>
+              </Reveal>
+            ))}
+          </ol>
+          <Reveal delay={420}>
+            <Link
+              to="/resources"
+              className="mt-5 inline-flex items-center gap-1 text-[15px] font-semibold text-white hover:text-blush"
+            >
+              {COPY.landing.navResources}
+              <ArrowRight size={16} aria-hidden />
+            </Link>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* CTA band */}
+      <section className="max-w-[1024px] mx-auto px-4 py-12">
+        <Reveal>
+          <div className="bg-blush rounded-xl p-8 text-center">
+            <h2 className="text-[24px] font-bold text-ink mb-3">{COPY.landing.ctaTitle}</h2>
+            <p className="text-[15px] text-ink/70 max-w-[420px] mx-auto mb-6">{COPY.landing.signInBody}</p>
             <button
               type="button"
               onClick={() => { setSignErr(null); setSignInOpen(true); }}
@@ -109,76 +265,8 @@ export function Landing() {
             >
               {COPY.landing.primaryCta}
             </button>
-            <Link
-              to="/u/kiran"
-              className="h-12 px-6 rounded-lg border border-line text-[15px] font-semibold text-ink hover:bg-surface transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 flex items-center justify-center"
-            >
-              {COPY.landing.secondaryCta}
-            </Link>
           </div>
-        </div>
-        <PhoneMockup />
-      </section>
-
-      {/* 3 USPs — indigo / blush / white panels per the reference grid */}
-      <section id="features" className="max-w-[1024px] mx-auto px-4 pb-12">
-        <div className="grid sm:grid-cols-3 gap-4">
-          {COPY.landing.cards.map((c, i) => {
-            const Icon = CARD_ICONS[i];
-            return (
-              <article key={c.title} className={`rounded-xl p-5 ${CARD_PANELS[i]}`}>
-                <span aria-hidden className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${CARD_TILE[i]}`}>
-                  <Icon size={20} strokeWidth={2} />
-                </span>
-                <h3 className="font-semibold text-[15px] mb-2">{c.title}</h3>
-                <p className={`text-[14px] ${i === 0 ? "text-white/80" : i === 1 ? "text-ink/70" : "text-ink-muted"}`}>{c.body}</p>
-              </article>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* how it works — full-bleed indigo block */}
-      <section id="how" className="bg-accent text-white">
-        <div className="max-w-[680px] mx-auto px-4 py-12">
-          <h2 className="text-[22px] font-bold mb-1">{COPY.landing.navHow}</h2>
-          <p className="text-white/70 text-[15px] mb-6">{COPY.landing.signInBody}</p>
-          <ol className="flex flex-col gap-3">
-            {COPY.landing.howSteps.map((step, i) => (
-              <li key={i} className="bg-white/10 rounded-xl p-4 flex items-center gap-3">
-                <span
-                  aria-hidden
-                  className="w-7 h-7 rounded-full bg-white text-accent text-[13px] font-bold flex items-center justify-center shrink-0"
-                >
-                  {i + 1}
-                </span>
-                <span className="text-[15px]">{step}</span>
-              </li>
-            ))}
-          </ol>
-          <Link
-            to="/resources"
-            className="mt-5 inline-flex items-center gap-1 text-[15px] font-semibold text-white hover:text-blush"
-          >
-            {COPY.landing.navResources}
-            <ArrowRight size={16} aria-hidden />
-          </Link>
-        </div>
-      </section>
-
-      {/* CTA band — blush panel, pricing-card feel */}
-      <section className="max-w-[1024px] mx-auto px-4 py-12">
-        <div className="bg-blush rounded-xl p-8 text-center">
-          <h2 className="text-[24px] font-bold text-ink mb-3">{COPY.landing.ctaTitle}</h2>
-          <p className="text-[15px] text-ink/70 max-w-[420px] mx-auto mb-6">{COPY.landing.signInBody}</p>
-          <button
-            type="button"
-            onClick={() => { setSignErr(null); setSignInOpen(true); }}
-            className="h-12 px-6 rounded-lg bg-brand text-white text-[15px] font-semibold hover:bg-brand-dark transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
-          >
-            {COPY.landing.primaryCta}
-          </button>
-        </div>
+        </Reveal>
       </section>
 
       <footer className="border-t border-line">
@@ -252,7 +340,7 @@ export function Landing() {
 // (greeting + score ring, deadline chips, three board columns). No images.
 function PhoneMockup() {
   return (
-    <div aria-hidden className="relative mx-auto w-[250px] lg:w-[270px] select-none">
+    <div aria-hidden className="relative mx-auto w-[230px] lg:w-[260px] select-none">
       <div className="rounded-[2rem] bg-ink p-2 shadow-elev">
         <div className="rounded-[1.55rem] bg-canvas overflow-hidden">
           <div className="h-7 flex items-center justify-center">
@@ -298,9 +386,6 @@ function PhoneMockup() {
           </div>
         </div>
       </div>
-      <span className="absolute -right-2 top-24 h-8 px-3 rounded-full bg-blush text-ink text-[12px] font-semibold inline-flex items-center shadow-elev rotate-3">
-        Offer! 🎉
-      </span>
     </div>
   );
 }

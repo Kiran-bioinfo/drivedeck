@@ -1069,7 +1069,7 @@ Every cut below has a reason tied to the three constraints (solo builder, ~3 wee
 | Hosting | Cloudflare Pages | Free, fast in India, SPA fallback via `_redirects` |
 | Seeding | firebase-admin (dev-only) | Admin writes bypass rules — the verified-data pipeline |
 
-**Total runtime dependencies: five.** Anything beyond this list needs a written justification in the repo README.
+**Total runtime dependencies: five, plus one approved exception (`three` — landing 3D hero, README "Why `three`").** Anything beyond this list needs a written justification in the repo README.
 
 ## Appendix B — Repo structure and build order
 

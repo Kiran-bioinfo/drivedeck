@@ -457,7 +457,7 @@ Build in this order; deploy on day one and keep the link alive (`PRD.md` §15.3 
 
 ## Sheet 8 — Specifications
 
-### 8.1 Dependencies (the cap: five beyond React)
+### 8.1 Dependencies (the cap: five, plus one approved exception)
 
 | Package | Role |
 |---|---|
@@ -466,8 +466,9 @@ Build in this order; deploy on day one and keep the link alive (`PRD.md` §15.3 
 | `@dnd-kit/core` | Board drag — accessible, touch-first |
 | `lucide-react` | Icons, tree-shaken |
 | `tailwindcss` | Styling engine (design tokens: `PRD.md` §8) |
+| `three` | **Approved sixth** — landing 3D hero only (`src/components/HeroCanvas.tsx`), `React.lazy` chunk, justified in README "Why `three`" |
 
-Dev-only, never in the bundle: `firebase-admin` (seed script), `vite`, `typescript`. Adding a sixth runtime dependency requires written justification in the repo README — the architecture (Sheets 2–4) assumes the count stays at five.
+Dev-only, never in the bundle: `firebase-admin` (seed script), `vite`, `typescript`, `@types/three`. The sixth dependency was user-approved for the UI/UX rubric; it must stay landing-only (no authenticated page may import `three`), and the architecture (Sheets 2–4) is otherwise unchanged.
 
 ### 8.2 Language & conventions
 
