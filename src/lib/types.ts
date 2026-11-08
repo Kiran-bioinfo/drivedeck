@@ -101,6 +101,8 @@ export interface Activity {
   tags: string[];
   date: Timestamp;
   createdAt?: Timestamp;
+  /** optional compressed image data URI (PRD §7.2) — null field means "removed" */
+  image?: string | null;
 }
 
 // One row of the eligibility table: pass === undefined → criterion not published on the drive

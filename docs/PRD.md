@@ -536,6 +536,25 @@ implemented verbatim in `src/lib/copy.ts`, so this section keeps the rule "one c
 | System | Sign-out toast | Signed out |
 | 404 | Title / body / CTA | 404 / This page doesn't exist. / Back to home |
 
+### 7.2 Build-time addition: optional image on evidence (§ F5)
+
+An activity may carry one optional image (compressed client-side, stored as a data
+URI inside the Firestore document). The **Link remains required** — the image is extra
+proof, never a replacement for the URL (Evidence Rule unchanged). Compression targets
+≤ 200 KB / 1024 px so documents stay far below Firestore's 1 MiB limit.
+
+| Location | Element | Exact string |
+|---|---|---|
+| Evidence modal | Image button | Add image |
+| Evidence modal | Image compressing | Compressing image… |
+| Evidence modal | Image helper | Optional — shown with the evidence row. Compressed automatically. |
+| Evidence modal | Image retained line | Image added — compressed to {kb} KB |
+| Evidence modal | Image error, wrong type | Use a JPEG, PNG or WebP image. |
+| Evidence modal | Image error, too large | That image is too large to compress (over 10 MB). |
+| Evidence modal | Image error, cannot compress | This image can't be compressed small enough — try another. |
+| Evidence modal | Image button, has image | Change image |
+| Evidence modal | Image remove | Remove
+
 | Empty portfolio | Body | {Name} hasn't logged evidence yet. |
 | Footer | Line | Live portfolio by DriveDeck — build yours free |
 

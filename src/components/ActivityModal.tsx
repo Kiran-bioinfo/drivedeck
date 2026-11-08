@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
-import { addDoc, collection, doc, serverTimestamp, Timestamp, updateDoc } from "firebase/firestore";
-import { X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { addDoc, collection, deleteField, doc, serverTimestamp, Timestamp, updateDoc, type FieldValue } from "firebase/firestore";
+import { ImagePlus, Loader2, X } from "lucide-react";
 import { db } from "../lib/firebase";
+import { compressImageFile, dataUriBytes, imageErrorKey } from "../lib/image";
 import type { Activity } from "../lib/types";
 import { COPY } from "../lib/copy";
 
@@ -27,6 +28,13 @@ export function ActivityModal({ open, onClose, uid, editing }: ActivityModalProp
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
 
+  // PRD §7.2 — optional evidence image: string = set · null = removed · initial from editing
+  const [image, setImage] = useState<string | null>(null);
+  const [imageKB, setImageKB] = useState<number | null>(null);
+  const [imageErr, setImageErr] = useState<"imageBadType" | "imageTooLarge" | "imageUncompressable" | null>(null);
+  const [compressing, setCompressing] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
   // prefill / reset on open
   useEffect(() => {
     if (open) {
@@ -37,6 +45,9 @@ export function ActivityModal({ open, onClose, uid, editing }: ActivityModalProp
         setUrl(editing.url);
         setTags(editing.tags.join(", "));
         setDate(editing.date.toDate().toISOString().slice(0, 10));
+        setImage(editing.image ?? null); // null here also means "no image yet"
+        setImageKB(null);
+        setImageErr(null);
       } else {
         setType("PROJECT");
         setTitle("");
@@ -44,6 +55,9 @@ export function ActivityModal({ open, onClose, uid, editing }: ActivityModalProp
         setUrl("");
         setTags("");
         setDate(new Date().toISOString().slice(0, 10));
+        setImage(null);
+        setImageKB(null);
+        setImageErr(null);
       }
       setSaving(false);
     }
@@ -53,19 +67,35 @@ export function ActivityModal({ open, onClose, uid, editing }: ActivityModalProp
 
   const validTitle = title.trim().length > 0;
   const validUrl = URL_RE.test(url.trim()); // must include protocol — the Evidence Rule
-  const canSave = validTitle && validUrl && !saving;
-  const dirty = Boolean(title || summary || url || tags);
+  const canSave = validTitle && validUrl && !saving && !compressing;
+  const dirty = Boolean(title || summary || url || tags) || image !== null && image !== (editing?.image ?? null);
 
   function handleBackdrop() {
     if (dirty && !confirm(COPY.growth.discardConfirm)) return;
     onClose();
   }
 
+  async function handlePickImage(file?: File | null) {
+    if (!file) return;
+    setImageErr(null);
+    setCompressing(true);
+    try {
+      const dataUrl = await compressImageFile(file);
+      setImage(dataUrl);
+      setImageKB(Math.max(1, Math.round(dataUriBytes(dataUrl) / 1024)));
+    } catch (e) {
+      setImageErr(imageErrorKey(e) as "imageBadType" | "imageTooLarge" | "imageUncompressable");
+    } finally {
+      setCompressing(false);
+      if (fileRef.current) fileRef.current.value = ""; // allow re-picking the same file
+    }
+  }
+
   async function handleSave() {
     if (!canSave) return;
     setSaving(true);
     const tagList = tags.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 3);
-    const payload = {
+    const payload: { uid: string; type: Activity["type"]; title: string; summary: string; url: string; tags: string[]; date: Timestamp; image?: string | FieldValue } = {
       uid,
       type,
       title: title.trim(),
@@ -74,6 +104,11 @@ export function ActivityModal({ open, onClose, uid, editing }: ActivityModalProp
       tags: tagList,
       date: Timestamp.fromDate(new Date(`${date}T12:00:00`)),
     };
+    // PRD §7.2 image lifecycle: set → write string; cleared → delete the field;
+    // untouched existing image → omit (keeps the document value)
+    const existingImage = editing?.image ?? null;
+    if (image) payload.image = image;
+    else if (existingImage != null) payload.image = deleteField();
     try {
       if (editing) {
         await updateDoc(doc(db, "activities", editing.id), payload);
@@ -184,6 +219,58 @@ export function ActivityModal({ open, onClose, uid, editing }: ActivityModalProp
             className="w-full h-11 px-3 rounded-lg border border-line bg-canvas text-[15px] focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           />
         </label>
+
+        {/* PRD §7.2 — optional image, compressed client-side before save */}
+        <div className="mb-6">
+          <span className="block text-[13px] font-medium text-ink-muted mb-1">Image</span>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="sr-only"
+            onChange={(e) => handlePickImage(e.target.files?.[0])}
+          />
+          <div className="flex items-start gap-3">
+            {image && (
+              <img
+                src={image}
+                alt="Evidence preview"
+                className="w-20 h-20 object-cover rounded-lg border border-line shrink-0"
+              />
+            )}
+            <div className="min-w-0">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={compressing}
+                  onClick={() => fileRef.current?.click()}
+                  className="h-10 px-3 rounded-lg border border-line bg-canvas text-[14px] font-medium text-ink hover:bg-line/40 transition-colors disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 flex items-center gap-2"
+                >
+                  {compressing ? <Loader2 size={16} className="animate-spin" aria-hidden /> : <ImagePlus size={16} strokeWidth={2} aria-hidden />}
+                  {image ? COPY.growth.imageChange : COPY.growth.imageAdd}
+                </button>
+                {image && (
+                  <button
+                    type="button"
+                    onClick={() => { setImage(null); setImageKB(null); }}
+                    className="h-10 px-3 rounded-lg bg-danger/10 text-[14px] font-medium text-danger hover:bg-danger/20 transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+                  >
+                    {COPY.growth.imageRemove}
+                  </button>
+                )}
+              </div>
+              <p className={`text-[13px] mt-1 ${imageErr ? "text-danger" : "text-ink-muted"}`}>
+                {compressing
+                  ? COPY.growth.imageCompressing
+                  : imageErr
+                    ? COPY.growth[imageErr]
+                    : image && imageKB
+                      ? COPY.growth.imageRetained(imageKB)
+                      : COPY.growth.imageHelper}
+              </p>
+            </div>
+          </div>
+        </div>
 
         <div className="flex gap-2">
           <button

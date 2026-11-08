@@ -26,9 +26,18 @@ export function ActivityRow({ activity, variant, onEdit, onDelete }: ActivityRow
 
   return (
     <div className="bg-surface border border-line rounded-xl shadow-card p-3 flex items-start gap-3">
-      <span aria-hidden className="w-8 h-8 rounded-full bg-brand/10 text-brand flex items-center justify-center shrink-0">
-        <Icon size={16} strokeWidth={2} />
-      </span>
+      {activity.image ? (
+        <img
+          src={activity.image}
+          alt=""
+          aria-hidden
+          className="w-11 h-11 rounded-lg border border-line object-cover shrink-0"
+        />
+      ) : (
+        <span aria-hidden className="w-8 h-8 rounded-full bg-brand/10 text-brand flex items-center justify-center shrink-0">
+          <Icon size={16} strokeWidth={2} />
+        </span>
+      )}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
           <h3 className="font-semibold text-[15px] leading-tight">{activity.title}</h3>
