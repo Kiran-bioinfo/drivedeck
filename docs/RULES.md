@@ -89,7 +89,7 @@ These extend Part I. Where Part I governs *how* you work, Part II governs *what*
 ## 6. Scope lock
 
 **Rule 6.1.** The product is 3 USPs + 4 features + 2 support screens (list: `PRD.md` §4). Nothing else ships. Every "why didn't you build X?" answer is `PRD.md` §14 — a contributor proposes scope changes by *editing that table*, never by writing code.
-**Rule 6.2.** Runtime dependencies are capped at five (`firebase`, `react-router-dom`, `@dnd-kit/core`, `lucide-react`, `tailwindcss`). A sixth requires written justification in the README, per `Architecture.md` Sheet 8.1 — **`three` is the approved sixth** (landing 3D hero, README "Why `three`"), lazy-loaded and used by the landing page only.
+**Rule 6.2.** Runtime dependencies are capped at five (`firebase`, `react-router-dom`, `@dnd-kit/core`, `lucide-react`, `tailwindcss`). A sixth requires written justification in the README, per `Architecture.md` Sheet 8.1 — **`motion` is the approved sixth** (landing hero-section-6 entrance animations, README "Why `motion`"), landing-page-only. (`three` was the previous sixth, a retired 3D hero.)
 **Rule 6.3.** No server, no cron, no file uploads, no AI features, no email — ever. The architecture assumes their absence (`Architecture.md` Sheet 1).
 
 ## 7. Data integrity (the non-negotiables)

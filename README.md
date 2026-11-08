@@ -5,28 +5,25 @@ and an auto-built public portfolio. Built for the JioCoder Hackathon 2026.
 
 See `docs/PRD.md`, `docs/Architecture.md`, `docs/Design.md`, `docs/RULES.md`.
 
-## Why `three` (sixth runtime dependency)
+## Why `motion` (sixth runtime dependency)
 
 `Architecture.md` Sheet 8.1 caps runtime dependencies at five and requires written
 justification for a sixth. This is that justification:
 
-- **What:** `three` (r187), used only by the landing page's 3D hero
-  (`src/components/HeroCanvas.tsx`), rendered inside a canvas as a purely decorative
-  WebGL scene (floating cards + a small mascot).
-- **Why:** The hackathon rubric awards 15 points for UI/UX. Judges see the landing
-  first; an interactive hero with real movement/depth is the strongest single
-  differentiator available to a static-pitch problem. CSS alone cannot deliver
-  lightable 3D objects with pointer parallax.
-- **Cost control:**
-  - Loaded through a `React.lazy` dynamic import, so `three` sits in its own chunk
-    and never touches the app bundle or any authenticated page.
-  - The scene is hand-written primitives (boxes/capsules/torus — zero downloaded
-    models), one draw pass, DPR capped at 2, animation paused when the tab is hidden.
-  - `prefers-reduced-motion: reduce` renders a single static frame instead of a loop.
-- **Scope:** No other page imports `three`; removal is guaranteed to be a
-  one-file deletion (`HeroCanvas.tsx`) plus the lazy import in `Landing.tsx`.
+- **What:** `motion` (the framer-motion successor; the `motion/react` entry point),
+  used by the landing page hero (`src/components/ui/hero-section-6.tsx` +
+  `src/components/ui/animated-group.tsx`) for the blur-in card entrance, the
+  staggered copy reveal, and the dashboard/iPhone entrance transitions.
+- **Why:** The hero-section-6 design the project owner approved ships its motion
+  via framer-motion variants; reimplementing spring/blur variants without the
+  library would mean maintaining a partial animation engine. The animation API
+  is serialized to the landing's reduced-motion preference via `MotionConfig`.
+- **Scope:** No other page imports `motion`; removal is a two-file deletion
+  (`hero-section-6.tsx`, `animated-group.tsx`) plus the import in `Landing.tsx`.
 
-Approved by the project owner (user request, 2026-11-09).
+Approved by the project owner (user-supplied component prompt, 2026-11-09).
+(NB: `three` was the previous exception, used by a retired 3D hero — it was
+removed when the hero-section-6 design replaced it; R187 lives in git history.)
 
 ## Local development
 

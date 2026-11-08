@@ -49,7 +49,7 @@ Where this file and `PRD.md` both speak about architecture (e.g. the rules, the 
 
 You are being asked to understand, review, or continue the construction of DriveDeck. Hold these facts:
 
-1. **The scope above is locked.** Do not propose features outside it; the answer to "why not build X?" is in `PRD.md` §14. Adding a server, a cron, file uploads, an AI feature, or a sixth runtime dependency is out of bounds — the entire architecture (Sheets 2–4) depends on their absence.
+1. **The scope above is locked.** Do not propose features outside it; the answer to "why not build X?" is in `PRD.md` §14. Adding a server, a cron, file uploads, an AI feature, or a seventh runtime dependency is out of bounds — the entire architecture (Sheets 2–4) depends on their absence.
 2. **Data writes go through Firestore security rules** (Sheet 4). There is no API layer to extend. Validation that matters lives in the rules, not the UI.
 3. **IDs are deterministic** (Sheet 3.3). Never generate random IDs where a deterministic one exists — duplicate protection is the ID.
 4. **Build in the Sheet 7 order.** Deploy on day one; the live link must exist from the first week.
@@ -466,9 +466,9 @@ Build in this order; deploy on day one and keep the link alive (`PRD.md` §15.3 
 | `@dnd-kit/core` | Board drag — accessible, touch-first |
 | `lucide-react` | Icons, tree-shaken |
 | `tailwindcss` | Styling engine (design tokens: `PRD.md` §8) |
-| `three` | **Approved sixth** — landing 3D hero only (`src/components/HeroCanvas.tsx`), `React.lazy` chunk, justified in README "Why `three`" |
+| `motion` | **Approved sixth** — landing hero only (`src/components/ui/hero-section-6.tsx`), justified in README "Why `motion`" |
 
-Dev-only, never in the bundle: `firebase-admin` (seed script), `vite`, `typescript`, `@types/three`. The sixth dependency was user-approved for the UI/UX rubric; it must stay landing-only (no authenticated page may import `three`), and the architecture (Sheets 2–4) is otherwise unchanged.
+Dev-only, never in the bundle: `firebase-admin` (seed script), `vite`, `typescript`, `@types/*`. The sixth dependency was user-approved for the UI/UX rubric (`motion`, landing hero animations); no authenticated page may import it, and the architecture (Sheets 2–4) is otherwise unchanged.
 
 ### 8.2 Language & conventions
 
