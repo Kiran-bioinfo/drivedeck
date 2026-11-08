@@ -1,0 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body { @apply bg-canvas text-ink font-sans antialiased; }
+  /* no page-level horizontal scroll on any viewport */
+  body { overflow-x: hidden; }
+}
+
+@layer components {
+  .skeleton {
+    @apply bg-line/60 rounded-lg animate-pulse;
+  }
+}

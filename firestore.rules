@@ -1,0 +1,44 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    // 1. Profiles: public read (portfolios), owner-only write, never deletable
+    match /users/{uid} {
+      allow read: if true;
+      allow create, update: if request.auth != null && request.auth.uid == uid;
+      allow delete: if false;
+    }
+
+    // 2. Slug registry: create-once, immutable — uniqueness + no portfolio hijacking
+    match /usernames/{slug} {
+      allow read: if true;
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // 3. Drives & companies: world-readable, client-writes impossible.
+    //    Only the Admin SDK (seed script) can write — the Verified-Data USP.
+    match /drives/{id}    { allow read: if true; allow write: if false; }
+    match /companies/{id} { allow read: if true; allow write: if false; }
+
+    // 4. Applications: doc ID is "{uid}_{driveId}" — the path IS the permission.
+    //    Path-based check works on create too (no resource needed).
+    match /applications/{appId} {
+      allow read, write: if request.auth != null
+                         && appId.split('_')[0] == request.auth.uid;
+    }
+
+    // 5. Activities: public read (portfolios), owner-only writes,
+    //    Evidence Rule enforced at the database level.
+    match /activities/{id} {
+      allow read: if true;
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.url is string
+                    && request.resource.data.url.matches('https?://.+');
+      allow update, delete: if request.auth != null
+                    && resource.data.uid == request.auth.uid;
+    }
+  }
+}
