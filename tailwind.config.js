@@ -5,6 +5,8 @@ module.exports = {
     extend: {
       colors: {
         brand:   { DEFAULT: '#4F46E5', dark: '#4338CA' },
+        accent:  '#2052EB',
+        blush:   '#FADBE5',
         canvas:  '#F8FAFC',
         surface: '#FFFFFF',
         ink:     { DEFAULT: '#0F172A', muted: '#64748B' },

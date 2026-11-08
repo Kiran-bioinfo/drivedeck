@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { writeBatch, doc, serverTimestamp, getDoc } from "firebase/firestore";
+import { Loader2 } from "lucide-react";
 import { db } from "../lib/firebase";
 import type { Branch, TargetRole } from "../lib/types";
 import { BRANCHES, TARGET_ROLES } from "../lib/types";
@@ -50,6 +51,8 @@ export function Onboarding() {
     linkedinUrl: "",
   }));
   const [errors, setErrors] = useState<Partial<Record<keyof ProfileDraft, string>>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [finishErr, setFinishErr] = useState<string | null>(null);
   const [slug, setSlug] = useState("");
   const [slugStatus, setSlugStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid" | "reserved">("idle");
 
@@ -112,6 +115,8 @@ export function Onboarding() {
 
   async function finish() {
     if (!uid || !slugReady) return;
+    setFinishErr(null);
+    setSubmitting(true);
     try {
       const batch = writeBatch(db);
       batch.set(doc(db, "users", uid), {
@@ -134,49 +139,95 @@ export function Onboarding() {
       batch.set(doc(db, "usernames", slug), { uid });
       await batch.commit();
       navigate("/dashboard");
-    } catch {
-      // slug claimed in the race window → back to step 2 with the inline taken message
-      setSlugStatus("taken");
-      setStep(2);
+    } catch (e) {
+      const code = (e as { code?: string }).code ?? "";
+      if (code.includes("permission-denied")) {
+        // slug claimed in the race window → back to step 2 with the inline taken message
+        setSlugStatus("taken");
+        setStep(2);
+      } else {
+        // offline / rate-limited → keep the form, surface a real error message
+        setFinishErr(COPY.onboarding.finishOffline);
+      }
+    } finally {
+      setSubmitting(false);
     }
   }
 
   const inputCls =
     "w-full h-11 px-3 rounded-lg border border-line bg-canvas text-[15px] focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand";
-  const errCls = (k: keyof ProfileDraft) => (errors[k] ? "border-danger" : undefined);
 
   return (
     <div className="min-h-screen bg-canvas px-4 py-10 lg:grid lg:place-items-center">
       <div className="bg-surface border border-line rounded-xl shadow-card p-4 w-full max-w-[480px] mx-auto">
-        <p className="text-[13px] font-medium text-ink-muted mb-1">{COPY.onboarding.stepOf(step)}</p>
+        <p className="text-[13px] font-medium text-ink-muted mb-2">{COPY.onboarding.stepOf(step)}</p>
+        <div className="flex gap-1.5 mb-1" aria-hidden>
+          {[1, 2, 3].map((i) => (
+            <span
+              key={i}
+              className={`h-1.5 flex-1 rounded-full transition-colors ${i <= step ? "bg-brand" : "bg-line"}`}
+            />
+          ))}
+        </div>
         <h2 className="font-semibold text-xl mb-4">
           {step === 1 ? COPY.onboarding.step1 : step === 2 ? COPY.onboarding.step2 : COPY.onboarding.step3}
         </h2>
 
         {step === 1 && (
           <div className="flex flex-col gap-3">
-            {(
-              [
-                ["name", COPY.onboarding.fields.name, "text"],
-                ["college", COPY.onboarding.fields.college, "text"],
-                ["tenth", COPY.onboarding.fields.tenth, "number"],
-                ["twelfth", COPY.onboarding.fields.twelfth, "number"],
-                ["cgpa", COPY.onboarding.fields.cgpa, "number"],
-                ["backlogs", COPY.onboarding.fields.backlogs, "number"],
-              ] as const
-            ).map(([key, label, inputType]) => (
-              <label key={key} className="block">
-                <span className="block text-[13px] font-medium text-ink-muted mb-1">{label}</span>
-                <input
-                  type={inputType}
-                  inputMode={inputType === "number" ? "decimal" : undefined}
-                  value={draft[key] as string | number}
-                  onChange={(e) => set(key, e.target.value as never)}
-                  className={errCls(key) ? `${inputCls} border-danger` : inputCls}
-                />
-                {errors[key] && <span className="text-[13px] text-danger mt-1">{errors[key]}</span>}
-              </label>
-            ))}
+            <label className="block">
+              <span className="block text-[13px] font-medium text-ink-muted mb-1">{COPY.onboarding.fields.name}</span>
+              <input
+                type="text"
+                value={draft.name}
+                onChange={(e) => set("name", e.target.value)}
+                className={errors.name ? `${inputCls} border-danger` : inputCls}
+              />
+              {errors.name && <span className="text-[13px] text-danger mt-1">{errors.name}</span>}
+            </label>
+
+            <label className="block">
+              <span className="block text-[13px] font-medium text-ink-muted mb-1">{COPY.onboarding.fields.college}</span>
+              <input
+                type="text"
+                value={draft.college}
+                onChange={(e) => set("college", e.target.value)}
+                className={errors.college ? `${inputCls} border-danger` : inputCls}
+              />
+              {errors.college && <span className="text-[13px] text-danger mt-1">{errors.college}</span>}
+            </label>
+
+            {/* 10th% / 12th% and CGPA / Backlogs pair up two-per-row to keep step 1 short */}
+            <div className="grid grid-cols-2 gap-3">
+              {(["tenth", "twelfth"] as const).map((key) => (
+                <label key={key} className="block">
+                  <span className="block text-[13px] font-medium text-ink-muted mb-1">{COPY.onboarding.fields[key]}</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    value={draft[key]}
+                    onChange={(e) => set(key, e.target.value)}
+                    className={errors[key] ? `${inputCls} border-danger` : inputCls}
+                  />
+                  {errors[key] && <span className="text-[13px] text-danger mt-1">{errors[key]}</span>}
+                </label>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {(["cgpa", "backlogs"] as const).map((key) => (
+                <label key={key} className="block">
+                  <span className="block text-[13px] font-medium text-ink-muted mb-1">{COPY.onboarding.fields[key]}</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    value={draft[key]}
+                    onChange={(e) => set(key, e.target.value)}
+                    className={errors[key] ? `${inputCls} border-danger` : inputCls}
+                  />
+                  {errors[key] && <span className="text-[13px] text-danger mt-1">{errors[key]}</span>}
+                </label>
+              ))}
+            </div>
 
             <label className="block">
               <span className="block text-[13px] font-medium text-ink-muted mb-1">{COPY.onboarding.fields.branch}</span>
@@ -320,10 +371,13 @@ export function Onboarding() {
             <button
               type="button"
               onClick={finish}
-              className="h-11 rounded-lg bg-brand text-white text-[15px] font-semibold hover:bg-brand-dark transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+              disabled={submitting || !slugReady}
+              className="h-11 rounded-lg bg-brand text-white text-[15px] font-semibold hover:bg-brand-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 inline-flex items-center justify-center gap-2"
             >
-              {COPY.onboarding.finish}
+              {submitting && <Loader2 size={16} className="animate-spin" aria-hidden />}
+              {submitting ? COPY.onboarding.finishing : COPY.onboarding.finish}
             </button>
+            {finishErr && <p className="text-[13px] text-danger" role="alert">{finishErr}</p>}
             {slugStatus === "taken" && (
               <p className="text-[13px] text-danger">{COPY.onboarding.slugTaken(slug)}</p>
             )}

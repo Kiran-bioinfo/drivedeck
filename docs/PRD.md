@@ -535,6 +535,12 @@ implemented verbatim in `src/lib/copy.ts`, so this section keeps the rule "one c
 | Resources | H1 + sub | Prep resources that actually help. / Curated by hand, every link checked. No filler. |
 | System | Sign-out toast | Signed out |
 | 404 | Title / body / CTA | 404 / This page doesn't exist. / Back to home |
+| Landing | Sign-in card, title / body | Create your DriveDeck / One tap with Google — your board, score and portfolio are ready in 2 minutes. |
+| Landing | Sign-in button / loading / error | Continue with Google / Signing you in… / Google sign-in didn't open — allow popups for this site and try again. |
+| Landing | CTA band title | Your offer letter starts here. |
+| Landing | How-it-works steps | Sign in with Google — 2 minutes of setup, either setup. / Save verified drives that match your profile. / Log evidence with its link — your score and portfolio update themselves. |
+| Onboarding | Finish loading / offline error | Setting up your dashboard… / Couldn't save your profile — check your connection and try again. |
+| System | Design tokens (build-time, §8.1 extension) | accent `#2052EB` · blush `#FADBE5` — landing color panels |
 
 ### 7.2 Build-time addition: optional image on evidence (§ F5)
 
