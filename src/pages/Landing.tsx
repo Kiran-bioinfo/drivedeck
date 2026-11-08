@@ -12,17 +12,18 @@ import { GoogleIcon } from "../components/GoogleIcon";
 const HeroCanvas = lazy(() => import("../components/HeroCanvas"));
 
 const CARD_ICONS = [BadgeCheck, FolderGit2, Award] as const;
+// reference pairing: dark panel + bright panel, in our blue/cream palette
 const CARD_PANELS = [
   "bg-accent text-white",
   "bg-cream text-ink border border-ink/10",
-  "bg-mint text-ink border border-ink/10",
+  "bg-ink text-white",
 ] as const;
 const CARD_TILE = [
   "bg-white/20 text-white",
   "bg-white/70 text-ink",
-  "bg-brand/10 text-brand",
+  "bg-white/20 text-white",
 ] as const;
-const CARD_BODY = ["text-white/80", "text-ink/70", "text-ink-muted"] as const;
+const CARD_BODY = ["text-white/80", "text-ink/70", "text-white/70"] as const;
 
 const REDUCED = "(prefers-reduced-motion: reduce)";
 
@@ -150,16 +151,16 @@ export function Landing() {
       */}
       <section className="max-w-[1024px] mx-auto px-4 pt-4">
         <div className="grid md:grid-cols-2 gap-4">
-          {/* cream panel — pitch */}
-          <div className="rounded-xl bg-cream p-7 lg:p-12 flex flex-col justify-center animate-rise">
-            <p className="inline-flex w-fit items-center gap-1.5 h-8 px-3 rounded-full bg-white/80 text-ink text-[13px] font-medium mb-5">
+          {/* navy panel — pitch (the reference's dark panel, in our blue family) */}
+          <div className="rounded-xl bg-ink p-7 lg:p-12 flex flex-col justify-center animate-rise">
+            <p className="inline-flex w-fit items-center gap-1.5 h-8 px-3 rounded-full bg-white/10 text-white text-[13px] font-medium mb-5">
               <BadgeCheck size={14} strokeWidth={2.5} aria-hidden className="text-success" />
               {COPY.landing.trust}
             </p>
-            <h1 className="text-[32px] lg:text-[42px] leading-[1.14] font-bold tracking-tight mb-4">
+            <h1 className="text-[32px] lg:text-[42px] leading-[1.14] font-bold tracking-tight mb-4 text-white">
               {COPY.landing.h1}
             </h1>
-            <p className="text-[16px] lg:text-[18px] text-ink-muted max-w-[420px] mb-7">
+            <p className="text-[16px] lg:text-[18px] text-white/70 max-w-[420px] mb-7">
               {COPY.landing.support}
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
@@ -172,15 +173,15 @@ export function Landing() {
               </button>
               <Link
                 to="/u/kiran"
-                className="h-12 px-6 rounded-lg border border-ink/15 bg-white/70 text-[15px] font-semibold text-ink hover:bg-white transition-all focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 flex items-center justify-center"
+                className="h-12 px-6 rounded-lg border border-white/25 bg-white/10 text-[15px] font-semibold text-white hover:bg-white/20 transition-all focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 flex items-center justify-center"
               >
                 {COPY.landing.secondaryCta}
               </Link>
             </div>
           </div>
 
-          {/* mint panel — product: 3D mascots orbit the phone (lazy three chunk) */}
-          <div className="relative rounded-xl bg-mint overflow-hidden min-h-[400px] md:min-h-[480px] animate-rise" style={{ animationDelay: "120ms" }}>
+          {/* cream panel — product: 3D mascots orbit the phone (lazy three chunk) */}
+          <div className="relative rounded-xl bg-cream overflow-hidden min-h-[400px] md:min-h-[480px] animate-rise" style={{ animationDelay: "120ms" }}>
             <Suspense fallback={null}>
               <HeroCanvas />
             </Suspense>
@@ -193,7 +194,7 @@ export function Landing() {
               <BadgeCheck size={13} className="text-success" aria-hidden />
               4-day streak
             </span>
-            <span aria-hidden className="absolute right-5 bottom-6 z-10 h-8 px-3 rounded-full bg-blush text-ink text-[12px] font-semibold inline-flex items-center shadow-elev rotate-3 animate-float">
+            <span aria-hidden className="absolute right-5 bottom-6 z-10 h-8 px-3 rounded-full bg-accent text-white text-[12px] font-semibold inline-flex items-center shadow-elev rotate-3 animate-float">
               Offer! 🎉
             </span>
           </div>
@@ -263,7 +264,7 @@ export function Landing() {
       {/* CTA band */}
       <section className="max-w-[1024px] mx-auto px-4 py-12">
         <Reveal>
-          <div className="bg-blush rounded-xl p-8 text-center">
+          <div className="bg-cream rounded-xl p-8 text-center">
             <h2 className="text-[24px] font-bold text-ink mb-3">{COPY.landing.ctaTitle}</h2>
             <p className="text-[15px] text-ink/70 max-w-[420px] mx-auto mb-6">{COPY.landing.signInBody}</p>
             <button
@@ -277,29 +278,29 @@ export function Landing() {
         </Reveal>
       </section>
 
-      <footer className="border-t border-line">
+      <footer className="bg-ink text-white">
         <div className="max-w-[1024px] mx-auto px-4 py-8 grid sm:grid-cols-3 gap-6">
           <div>
-            <span className="font-bold text-lg text-brand">DriveDeck</span>
-            <p className="text-[13px] text-ink-muted mt-2">{COPY.landing.trust}</p>
-            <p className="text-[12px] text-ink-muted mt-1">{COPY.landing.footer}</p>
+            <span className="font-bold text-lg text-white">DriveDeck</span>
+            <p className="text-[13px] text-white/60 mt-2">{COPY.landing.trust}</p>
+            <p className="text-[12px] text-white/40 mt-1">{COPY.landing.footer}</p>
           </div>
           <nav aria-label="Product" className="flex flex-col gap-2 text-[14px]">
-            <span className="font-semibold text-[13px] uppercase tracking-wide text-ink-muted mb-1">Product</span>
-            <a href="#features" className="text-ink-muted hover:text-ink w-fit">{COPY.landing.navFeatures}</a>
-            <a href="#how" className="text-ink-muted hover:text-ink w-fit">{COPY.landing.navHow}</a>
-            <Link to="/resources" className="text-ink-muted hover:text-ink w-fit">{COPY.landing.navResources}</Link>
+            <span className="font-semibold text-[13px] uppercase tracking-wide text-white/40 mb-1">Product</span>
+            <a href="#features" className="text-white/70 hover:text-white w-fit">{COPY.landing.navFeatures}</a>
+            <a href="#how" className="text-white/70 hover:text-white w-fit">{COPY.landing.navHow}</a>
+            <Link to="/resources" className="text-white/70 hover:text-white w-fit">{COPY.landing.navResources}</Link>
           </nav>
           <nav aria-label="Start" className="flex flex-col gap-2 text-[14px]">
-            <span className="font-semibold text-[13px] uppercase tracking-wide text-ink-muted mb-1">Start</span>
+            <span className="font-semibold text-[13px] uppercase tracking-wide text-white/40 mb-1">Start</span>
             <button
               type="button"
               onClick={() => { setSignErr(null); setSignInOpen(true); }}
-              className="text-ink-muted hover:text-ink text-left w-fit"
+              className="text-white/70 hover:text-white text-left w-fit"
             >
               {COPY.landing.primaryCta}
             </button>
-            <Link to="/u/kiran" className="text-ink-muted hover:text-ink w-fit">{COPY.landing.secondaryCta}</Link>
+            <Link to="/u/kiran" className="text-white/70 hover:text-white w-fit">{COPY.landing.secondaryCta}</Link>
           </nav>
         </div>
       </footer>

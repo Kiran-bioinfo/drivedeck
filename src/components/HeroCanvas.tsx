@@ -118,7 +118,7 @@ export default function HeroCanvas() {
     card(COLORS.mint, -1.9, -1.2, -0.4, -0.12, -0.16);
 
     // ── accent ring + orb (kept inside the cluster) ──
-    const torus = new THREE.Mesh(track(new THREE.TorusGeometry(0.34, 0.05, 12, 40)), mat(COLORS.cream, { roughness: 0.3 }));
+    const torus = new THREE.Mesh(track(new THREE.TorusGeometry(0.34, 0.05, 12, 40)), mat(COLORS.blue, { roughness: 0.3 }));
     torus.rotation.x = 0.9;
     place(torus, 0.35, 1.65, -0.7, { speed: 0.6, amp: 0.16, spinY: 0.35 });
     const orb = new THREE.Mesh(track(new THREE.SphereGeometry(0.15, 16, 12)), mat(COLORS.blush));
