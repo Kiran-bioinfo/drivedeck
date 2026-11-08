@@ -174,7 +174,7 @@ A USP is not "a feature we like". Each one below passes a three-part test:
 
 **Why this is a USP.**
 - **It attacks the stale-resume pain automatically.** Portfolios on LinkedIn, Carrd or GitHub Pages are built manually and die of neglect. DriveDeck's portfolio compiles itself from an evidence log the student keeps anyway (they want the streak and the score). Zero extra work is the only reason a student tool survives contact with a real student.
-- **The Evidence Rule is enforced by the database, not by promises.** An activity without a working `https://` link is rejected in the UI *and* in Firestore security rules (§9.4). "Every item evidence-linked" is therefore a guarantee, not a style — trust enforced at the schema level is the structural differentiator.
+- **The Evidence Rule is enforced by the database, not by promises.** An activity carries proof — a working `https://` link, or an attached compressed image (§7.2). A bare write with neither is rejected in the UI *and* in Firestore security rules (§9.4). "Every item evidence-linked" is therefore a guarantee, not a style — trust enforced at the schema level is the structural differentiator.
 - **It reframes the product.** "Placement tracker" is a crowded category; "a live resume that builds itself from verified work" is a story judges repeat. This is the screen the demo ends on.
 
 **How it is built.** `activities` collection (url required, regex-checked in rules); the portfolio page is a read-only render of `activities` grouped by type + the `users/{uid}` profile; the `usernames/{slug}` registry guarantees `/u/yourname` is unique and immutable; share via Web Share API / copy-link.
@@ -362,7 +362,7 @@ Naming convention used everywhere in the UI: **Drives** (not "opportunities"), *
 - **Portfolio `/u/:slug` (public, no auth)**: header (name, "Aspiring Data Analyst · 3rd year, CSE", college, readiness ring + "How this is calculated", badge "Every item evidence-linked"), then sections built only from activities present: Projects / Certifications & courses / DSA consistency (count + current streak) / Achievements / Growth timeline (12-month bar strip of activity counts, pure CSS). Each item card: title, summary, tags, and its link buttons ("GitHub", "Live", "Credential" — button label auto-picked from the URL host). Footer: "Live portfolio by DriveDeck — build yours free" (link to landing).
 
 **Behavior & edge cases.**
-- The Evidence Rule is enforced twice: UI disables save without a valid `http(s)` URL, and Firestore rules reject such writes regardless (§9.4).
+- The Evidence Rule is enforced twice: UI requires a valid `http(s)` URL unless an image is attached, and Firestore rules reject unsupported writes regardless (§9.4).
 - Share: Web Share API on mobile (falls back to copy-link + toast "Portfolio link copied").
 - Slug not found → designed 404: "This portfolio doesn't exist (yet)." + button "Claim your own" → landing.
 - Empty portfolio (0 activities): still renders header + "Kiran hasn't logged evidence yet." — never a broken page.
@@ -539,15 +539,17 @@ implemented verbatim in `src/lib/copy.ts`, so this section keeps the rule "one c
 ### 7.2 Build-time addition: optional image on evidence (§ F5)
 
 An activity may carry one optional image (compressed client-side, stored as a data
-URI inside the Firestore document). The **Link remains required** — the image is extra
-proof, never a replacement for the URL (Evidence Rule unchanged). Compression targets
-≤ 200 KB / 1024 px so documents stay far below Firestore's 1 MiB limit.
+URI inside the Firestore document). **An attached image satisfies the Evidence Rule
+on its own** — a link is still required when no image is attached.
+Compression targets ≤ 200 KB / 1024 px so documents stay far below Firestore's
+1 MiB limit.
 
 | Location | Element | Exact string |
 |---|---|---|
 | Evidence modal | Image button | Add image |
 | Evidence modal | Image compressing | Compressing image… |
 | Evidence modal | Image helper | Optional — shown with the evidence row. Compressed automatically. |
+| Evidence modal | Link helper, image attached | Image attached — the link becomes optional. |
 | Evidence modal | Image retained line | Image added — compressed to {kb} KB |
 | Evidence modal | Image error, wrong type | Use a JPEG, PNG or WebP image. |
 | Evidence modal | Image error, too large | That image is too large to compress (over 10 MB). |
@@ -706,7 +708,7 @@ Firestore is the entire backend. No Cloud Functions, no servers, no cron. Three 
 | `type` | string | `PROJECT` / `CERT` / `COURSE` / `DSA` / `ACHIEVEMENT` |
 | `title` | string | Required |
 | `summary` | string | ≤ 140 chars |
-| `url` | string | **Required, `https?://` enforced by security rules — the Evidence Rule |
+| `url` | string | Required **unless an image is attached** (`https?://` enforced by security rules — the Evidence Rule, §7.3) |
 | `tags` | array of string | ≤ 3 |
 | `date`, `createdAt` | timestamp | `date` = when the work happened (user-editable, defaults today) |
 

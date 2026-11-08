@@ -30,13 +30,18 @@ service cloud.firestore {
     }
 
     // 5. Activities: public read (portfolios), owner-only writes,
-    //    Evidence Rule enforced at the database level.
+    //    Evidence Rule enforced at the database level: proof = a valid link
+    //    OR an attached compressed image (PRD §7.2).
     match /activities/{id} {
       allow read: if true;
       allow create: if request.auth != null
                     && request.resource.data.uid == request.auth.uid
-                    && request.resource.data.url is string
-                    && request.resource.data.url.matches('https?://.+');
+                    && (
+                      (request.resource.data.url is string
+                       && request.resource.data.url.matches('https?://.+'))
+                      || (request.resource.data.get('image', '') is string
+                          && request.resource.data.image.matches('^data:image/(jpeg|png|webp);base64,.+'))
+                    );
       allow update, delete: if request.auth != null
                     && resource.data.uid == request.auth.uid;
     }

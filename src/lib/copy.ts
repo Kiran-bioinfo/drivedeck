@@ -147,6 +147,7 @@ export const COPY = {
     typeChips: ["Project", "Certificate", "Course", "DSA", "Achievement"] as const,
     linkHelper: "GitHub, live site or credential URL — the link is the proof.",
     linkError: "A link is required — that's the evidence rule.",
+    linkOptional: "Image attached — the link becomes optional.",
     titleError: "Title is required.",
     summaryCount: (n: number) => `${n}/140`,
     linked: "Linked",

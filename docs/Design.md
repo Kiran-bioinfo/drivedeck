@@ -1338,7 +1338,7 @@ These are the rules the frontend interacts with. The other two (rules 1, 2 — p
 |---|---|---|
 | 3 | `drives` / `companies`: read if true, write if false | **Never attempt a drive/company write from the client.** The seed script is the only writer. If you need a drive added, run `scripts/seed.mjs`. |
 | 4 | `applications/{appId}`: read/write if `appId.split('_')[0] == uid` | **Always construct the doc ID as `{uid}_{driveId}`** via `src/lib` helper. Never use a random ID. The rule will deny a write whose ID prefix isn't your uid. |
-| 5 | `activities`: public read; create if `uid == auth.uid` AND `url.matches('https?://.+')` | **Always include `uid` and a valid `http(s)://` URL** in the create payload. The URL regex is non-negotiable — the Evidence Rule. |
+| 5 | `activities`: public read; create if `uid == auth.uid` AND (`url.matches('https?://.+')` OR `image` matches a `data:image/…;base64,` URI) | **Always include `uid` and proof** — a valid `http(s)://` URL, or an attached compressed image. The rules check both — the Evidence Rule. |
 
 ---
 ## Sheet 5 — No-Mock-Data appendix

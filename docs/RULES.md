@@ -96,7 +96,7 @@ These extend Part I. Where Part I governs *how* you work, Part II governs *what*
 
 **Rule 7.1 — No mock data.** Every rendered list, number, and badge comes from a real Firestore read. Banned/allowed patterns and the pre-merge checklist: `Design.md` Sheet 5. The seeded demo account `/u/kiran` is real documents — it is not a mock.
 **Rule 7.2 — Deterministic IDs only.** Document IDs are built by the `src/lib` helpers (`driveId`, `appId`), never string-built inline and never random where a deterministic ID exists (`Architecture.md` Sheet 3.3).
-**Rule 7.3 — The Evidence Rule.** Every `activities` write includes `uid` and a valid `http(s)://` URL. Enforced in the UI and again by `firestore.rules` rule 5.
+**Rule 7.3 — The Evidence Rule.** Every `activities` write includes `uid` and proof: a valid `http(s)://` URL, **or an attached compressed image** (`data:image/…;base64,` data URI, §PRD 7.2). Enforced in the UI and again by `firestore.rules` rule 5.
 **Rule 7.4 — Never write to `drives` or `companies` from the client.** They are seed-script-only (`firestore.rules` rule 3). If a drive is wrong, fix `scripts/seed.mjs` and re-run — never hot-patch from the app.
 **Rule 7.5 — Scores are derived, never stored.** The Readiness Score is computed by `src/lib/scoring.ts` at render time. There is no `score` field anywhere in the database.
 

@@ -65,9 +65,11 @@ export function ActivityModal({ open, onClose, uid, editing }: ActivityModalProp
 
   if (!open) return null;
 
+  const hasImage = image !== null;
   const validTitle = title.trim().length > 0;
   const validUrl = URL_RE.test(url.trim()); // must include protocol — the Evidence Rule
-  const canSave = validTitle && validUrl && !saving && !compressing;
+  // Evidence Rule (PRD §7.2): proof = valid link OR attached image
+  const canSave = validTitle && (validUrl || hasImage) && !saving && !compressing;
   const dirty = Boolean(title || summary || url || tags) || image !== null && image !== (editing?.image ?? null);
 
   function handleBackdrop() {
@@ -196,7 +198,11 @@ export function ActivityModal({ open, onClose, uid, editing }: ActivityModalProp
             }`}
           />
           <span className={`block text-[13px] mt-1 ${url && !validUrl ? "text-danger" : "text-ink-muted"}`}>
-            {url && !validUrl ? COPY.growth.linkError : COPY.growth.linkHelper}
+            {url && !validUrl
+              ? COPY.growth.linkError
+              : hasImage
+                ? COPY.growth.linkOptional
+                : COPY.growth.linkHelper}
           </span>
         </label>
 
