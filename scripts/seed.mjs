@@ -17,7 +17,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { initializeApp, cert } from "firebase-admin/app";
-import { getFirestore, serverTimestamp, Timestamp } from "firebase-admin/firestore";
+import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
+
+// firebase-admin v14: serverTimestamp lives behind FieldValue
+const serverTimestamp = () => FieldValue.serverTimestamp();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const keyPath = path.join(__dirname, "service-account.json");

@@ -172,7 +172,7 @@ export const COPY = {
   },
   portfolio: {
     badge: "Every item evidence-linked",
-    subline: (role: string, year: number, branch: string) => `${role} · ${year}th year, ${branch}`,
+    subline: (role: string, year: number, branch: string) => `${role} · ${year}${year === 1 ? "st" : year === 2 ? "nd" : year === 3 ? "rd" : "th"} year, ${branch}`,
     sections: {
       projects: "Projects",
       certs: "Certifications & courses",
