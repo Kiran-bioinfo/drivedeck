@@ -102,27 +102,27 @@ export default function HeroCanvas() {
     const eyeR = new THREE.Mesh(eyeGeo, eyeMat); eyeR.position.set(0.07, 0.6, 0.19);
     mascot.add(body, head, capBoard, capBase, tassel, eyeL, eyeR);
     mascot.scale.setScalar(1.18);
-    // mascot stands between the text column and the phone (visible, not hidden)
-    place(mascot, -1.15, -0.28, 0.7, { speed: 0.75, amp: 0.16, spinY: 0.15 });
+    // mascot stands left of the phone mockup, inside the mint panel
+    place(mascot, -1.55, -0.3, 0.7, { speed: 0.75, amp: 0.16, spinY: 0.15 });
 
-    // ── floating portfolio cards (orbit the phone; ink card replaces white — contrast) ──
+    // ── floating portfolio cards orbiting the phone mockup ──
     const cardGeo = track(new RoundedBoxGeometry(1.05, 1.28, 0.09, 3, 0.09));
     const card = (color: number, x: number, y: number, z: number, tiltZ: number, spin: number) => {
       const m = new THREE.Mesh(cardGeo, mat(color, { roughness: 0.38 }));
       m.rotation.set(0.05 * Math.sign(y) * -1, 0.32 * (Math.random() > 0.5 ? 1 : -1), tiltZ);
       place(m, x, y, z, { spinY: spin, amp: 0.26 });
     };
-    card(COLORS.indigo, -1.75, 1.28, -0.7, 0.12, 0.22);
-    card(COLORS.blush, 1.62, 1.38, -1.4, -0.08, -0.18);
-    card(COLORS.ink, 1.78, -1.28, 0.3, 0.1, 0.2);
-    card(COLORS.mint, -1.95, -1.18, -0.4, -0.12, -0.16);
+    card(COLORS.indigo, -1.8, 1.2, -0.7, 0.12, 0.22);
+    card(COLORS.blush, 1.6, 1.38, -1.3, -0.08, -0.18);
+    card(COLORS.ink, 1.72, -1.25, 0.3, 0.1, 0.2);
+    card(COLORS.mint, -1.9, -1.2, -0.4, -0.12, -0.16);
 
     // ── accent ring + orb (kept inside the cluster) ──
     const torus = new THREE.Mesh(track(new THREE.TorusGeometry(0.34, 0.05, 12, 40)), mat(COLORS.cream, { roughness: 0.3 }));
     torus.rotation.x = 0.9;
-    place(torus, 0.4, 1.72, -0.7, { speed: 0.6, amp: 0.16, spinY: 0.35 });
+    place(torus, 0.35, 1.65, -0.7, { speed: 0.6, amp: 0.16, spinY: 0.35 });
     const orb = new THREE.Mesh(track(new THREE.SphereGeometry(0.15, 16, 12)), mat(COLORS.blush));
-    place(orb, 0.18, -1.62, 0.55, { speed: 1.1, amp: 0.22 });
+    place(orb, 0.15, -1.6, 0.55, { speed: 1.1, amp: 0.22 });
 
     // pointer parallax target (window-level so hover over the text also moves it)
     const target = new THREE.Vector2(0, 0);
@@ -140,12 +140,10 @@ export default function HeroCanvas() {
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      // bias the cluster firmly into the right (mockup) column on wide screens,
-      // so the left text column stays clean
-      const lg = w >= 1024;
-      group.position.x = lg ? 2.35 : 0;
-      const s = lg ? 1.0 : Math.max(0.55, Math.min(0.8, w / 950));
-      group.scale.setScalar(s);
+      // contained composition: cluster always centered (hero is a two-panel
+      // layout — the canvas fills the mint panel behind the mockup)
+      group.position.x = 0;
+      group.scale.setScalar(Math.max(0.55, Math.min(0.92, w / 760)));
     }
     const ro = new ResizeObserver(resize);
     ro.observe(host);

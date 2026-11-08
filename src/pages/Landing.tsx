@@ -14,8 +14,8 @@ const HeroCanvas = lazy(() => import("../components/HeroCanvas"));
 const CARD_ICONS = [BadgeCheck, FolderGit2, Award] as const;
 const CARD_PANELS = [
   "bg-accent text-white",
-  "bg-mint text-ink border border-ink/10",
   "bg-cream text-ink border border-ink/10",
+  "bg-mint text-ink border border-ink/10",
 ] as const;
 const CARD_TILE = [
   "bg-white/20 text-white",
@@ -143,24 +143,26 @@ export function Landing() {
         </nav>
       </header>
 
-      {/* hero — WebGL cluster full-bleed behind copy + phone mockup */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-mint via-canvas to-canvas">
-        <Suspense fallback={null}>
-          <HeroCanvas />
-        </Suspense>
-        <div className="relative z-10 max-w-[1024px] mx-auto px-4 pt-10 lg:pt-16 pb-14 grid lg:grid-cols-[1.05fr_0.95fr] gap-8 items-center">
-          <div>
-            <p className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-white/80 backdrop-blur border border-ink/10 text-ink text-[13px] font-medium mb-4">
+      {/*
+        hero — the reference layout: two large rounded panels, cream (pitch)
+        + mint (product), side by side with a small gap; the 3D scene lives
+        contained inside the mint panel behind the phone mockup.
+      */}
+      <section className="max-w-[1024px] mx-auto px-4 pt-4">
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* cream panel — pitch */}
+          <div className="rounded-xl bg-cream p-7 lg:p-12 flex flex-col justify-center animate-rise">
+            <p className="inline-flex w-fit items-center gap-1.5 h-8 px-3 rounded-full bg-white/80 text-ink text-[13px] font-medium mb-5">
               <BadgeCheck size={14} strokeWidth={2.5} aria-hidden className="text-success" />
               {COPY.landing.trust}
             </p>
-            <h1 className="text-[34px] lg:text-[46px] leading-[1.12] font-bold tracking-tight mb-4">
+            <h1 className="text-[32px] lg:text-[42px] leading-[1.14] font-bold tracking-tight mb-4">
               {COPY.landing.h1}
             </h1>
-            <p className="text-[17px] lg:text-[19px] text-ink-muted max-w-[520px] mb-8">
+            <p className="text-[16px] lg:text-[18px] text-ink-muted max-w-[420px] mb-7">
               {COPY.landing.support}
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 max-w-[420px]">
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
                 type="button"
                 onClick={() => { setSignErr(null); setSignInOpen(true); }}
@@ -170,23 +172,29 @@ export function Landing() {
               </button>
               <Link
                 to="/u/kiran"
-                className="h-12 px-6 rounded-lg border border-line bg-white/80 backdrop-blur text-[15px] font-semibold text-ink hover:bg-surface transition-all focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 flex items-center justify-center"
+                className="h-12 px-6 rounded-lg border border-ink/15 bg-white/70 text-[15px] font-semibold text-ink hover:bg-white transition-all focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 flex items-center justify-center"
               >
                 {COPY.landing.secondaryCta}
               </Link>
             </div>
           </div>
 
-          <div className="relative">
-            <div className="animate-float-slow">
-              <PhoneMockup />
+          {/* mint panel — product: 3D mascots orbit the phone (lazy three chunk) */}
+          <div className="relative rounded-xl bg-mint overflow-hidden min-h-[400px] md:min-h-[480px] animate-rise" style={{ animationDelay: "120ms" }}>
+            <Suspense fallback={null}>
+              <HeroCanvas />
+            </Suspense>
+            <div className="relative z-10 h-full min-h-[400px] md:min-h-[480px] flex items-center justify-center py-8">
+              <div className="animate-float-slow">
+                <PhoneMockup />
+              </div>
             </div>
-            <span aria-hidden className="absolute -left-1 top-6 h-8 px-3 rounded-full bg-blush text-ink text-[12px] font-semibold inline-flex items-center shadow-elev -rotate-3 animate-float">
-              Offer! 🎉
-            </span>
-            <span aria-hidden className="absolute right-0 bottom-10 h-8 px-3 rounded-full bg-white/90 backdrop-blur border border-ink/10 text-ink text-[12px] font-semibold inline-flex items-center gap-1 shadow-elev rotate-2 animate-float-slow">
+            <span aria-hidden className="absolute left-5 top-5 z-10 h-8 px-3 rounded-full bg-white/85 backdrop-blur text-ink text-[12px] font-semibold inline-flex items-center gap-1 shadow-elev -rotate-3 animate-float">
               <BadgeCheck size={13} className="text-success" aria-hidden />
               4-day streak
+            </span>
+            <span aria-hidden className="absolute right-5 bottom-6 z-10 h-8 px-3 rounded-full bg-blush text-ink text-[12px] font-semibold inline-flex items-center shadow-elev rotate-3 animate-float">
+              Offer! 🎉
             </span>
           </div>
         </div>

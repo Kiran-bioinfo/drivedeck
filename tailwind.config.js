@@ -44,12 +44,17 @@ module.exports = {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%':      { transform: 'translateY(-10px)' },
         },
+        rise: {
+          '0%':   { opacity: '0', transform: 'translateY(16px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
       },
       animation: {
         'ring-fill': 'ring-fill 600ms ease-out forwards',
         confetti:    'confetti 1.2s ease-out forwards',
         float:       'float 7s ease-in-out infinite',
         'float-slow': 'float 11s ease-in-out infinite',
+        rise:        'rise 800ms ease-out both',
       },
     },
   },
