@@ -492,6 +492,50 @@ Copy principles: plain student language; numbers over adjectives; honesty in eve
 | DSA block | Line | {n} practice sets logged · {n}-day streak |
 | Share | Button | Share portfolio |
 | 404 | Title / body / CTA | This portfolio doesn't exist (yet). / Slugs are unique — maybe the letter O is a zero. / Claim your own |
+
+### 7.1 Build-time additions (added during the build; source of truth for copy.ts)
+
+Strings the build required but the v1.1 tables did not list. Everything below is already
+implemented verbatim in `src/lib/copy.ts`, so this section keeps the rule "one copy deck" intact.
+
+| Location | Element | Exact string |
+|---|---|---|
+| Drives | Badge, no criteria on drive | Criteria not published yet |
+| Drives | Eligibility row, criterion not on the drive | not published |
+| Drives | Eligibility row, all branches | All branches eligible |
+| Drives | Badge, branch-limited drive | Open to: {list} |
+| Drives | Badge, backlog fail | Backlogs above {value} |
+| Drives | Detail, removed drive | That drive is no longer available. |
+| Drives | Detail, saved state | Saved |
+| Drives | Detail, .ics disabled title | Date not yet confirmed by the source |
+| Countdown chip | No deadline | Date unconfirmed |
+| Onboarding | Slug, reserved | {slug} is reserved — try {slug}_26 or add your batch year. |
+| Onboarding | Slug, while checking | Checking… |
+| Onboarding | Invalid GitHub URL | Must start with https://github.com/ |
+| Onboarding | Invalid LinkedIn URL | Must start with https://linkedin.com/in/ |
+| Onboarding | Field validation | Enter your name. / Enter your college. / Pick your branch. / Pick a target role. / 10th % must be between 0 and 100. / 12th % must be between 0 and 100. / CGPA must be between 0 and 10. / Backlogs must be 0 or higher. |
+| Onboarding | Field helpers | Optional — your GitHub profile URL, shown on your portfolio. / Optional — your LinkedIn profile URL, shown on your portfolio. |
+| Board | Menu label | Card menu |
+| Board | Move-to group label | Move to |
+| Board | Card with deleted drive | Drive no longer available |
+| Growth | Modal, invalid title | Title is required. |
+| Growth | Modal, field labels | Title / One-line summary / Link / Tags (max 3) / Date |
+| Growth | Modal, tags helper | Comma-separated, max 3. |
+| Growth | Modal, discard confirm | Discard this entry? |
+| Growth | Empty state, CTA text pair | Log your first |
+| Growth | Toast, after save | Evidence saved — portfolio updated |
+| Growth | Toast, offline | You're offline — changes will retry when you're back |
+| Growth | Delete confirm | Delete this evidence? It will also disappear from your portfolio. |
+| Growth | Toast, after delete | Evidence deleted |
+| Growth | Empty CTA | Log your first |
+| Portfolio | Footer | Live portfolio by DriveDeck — build yours free |
+| Portfolio | Toast, link copied | Portfolio link copied |
+| Portfolio | Empty state | {name} hasn't logged evidence yet. |
+| Landing | Nav link (v1.1) | Resources |
+| Resources | H1 + sub | Prep resources that actually help. / Curated by hand, every link checked. No filler. |
+| System | Sign-out toast | Signed out |
+| 404 | Title / body / CTA | 404 / This page doesn't exist. / Back to home |
+
 | Empty portfolio | Body | {Name} hasn't logged evidence yet. |
 | Footer | Line | Live portfolio by DriveDeck — build yours free |
 
