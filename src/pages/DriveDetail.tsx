@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useOutletContext, useParams } from "react-router-dom";
-import { doc, getDoc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
+import { arrayUnion, doc, getDoc, onSnapshot, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { ChevronLeft } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { applicationId } from "../lib/ids";
-import type { Drive, Student } from "../lib/types";
+import type { AppStatus, Drive, Student } from "../lib/types";
+import { STAGES } from "../lib/types";
 import { checkEligibility } from "../lib/eligibility";
 import { COPY } from "../lib/copy";
 import { EligibilityTable } from "../components/EligibilityTable";
@@ -26,7 +27,8 @@ export function DriveDetail() {
 
   const [drive, setDrive] = useState<Drive | null>(null);
   const [missing, setMissing] = useState(false);
-  const [alreadySaved, setAlreadySaved] = useState<boolean | null>(null);
+  // null = no application yet · loading state handled by drive/profile skeleton
+  const [appStatus, setAppStatus] = useState<AppStatus | null>(null);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
@@ -42,14 +44,14 @@ export function DriveDetail() {
   const uidFinal = uid;
 
   useEffect(() => {
-    // one application check — not a listener; board CRUD updates it via SAVED state only
+    // one application check — real status, not a listener; board moves refresh via navigation
     if (!id || !uidFinal) return;
-    setAlreadySaved(null);
+    setAppStatus(null);
     getDoc(doc(db, "applications", applicationId(uidFinal, id)))
-      .then((d) => setAlreadySaved(d.exists()))
+      .then((d) => setAppStatus(d.exists() ? ((d.data().status as AppStatus) ?? null) : null))
       .catch((e) => {
         console.error("[DriveDeck] application check failed:", e);
-        setAlreadySaved(false); // optimistic; the round-trip on save is authoritative
+        setAppStatus(null); // optimistic; the round-trip on save is authoritative
       });
   }, [id, uidFinal]);
 
@@ -72,28 +74,42 @@ export function DriveDetail() {
   }
 
   const result = checkEligibility(profile, drive);
-  const saved = alreadySaved === true;
 
-  async function save() {
-    if (!drive || !uidFinal || saved || saving) return;
+  async function save(to: AppStatus) {
+    if (!drive || !uidFinal || saving) return;
+    if (appStatus && appStatus !== "SAVED") return; // already progressed on the board
     setSaving(true);
     try {
-      await setDoc(doc(db, "applications", applicationId(uidFinal, drive.id)), {
-        uid: uidFinal,
-        driveId: drive.id,
-        status: "SAVED",
-        // FieldValue sentinels cannot be nested inside arrays — use a client Date
-        history: [{ status: "SAVED", at: new Date() }],
-        updatedAt: serverTimestamp(),
-      });
-      setAlreadySaved(true);
-      toast(COPY.drives.toastSaved, "success");
+      const appId = applicationId(uidFinal, drive.id);
+      if (!appStatus) {
+        // first action: either straight to APPLIED or bookmarked as SAVED
+        await setDoc(doc(db, "applications", appId), {
+          uid: uidFinal,
+          driveId: drive.id,
+          status: to,
+          // FieldValue sentinels cannot be nested inside arrays — use a client Date
+          history: [{ status: to, at: new Date() }],
+          updatedAt: serverTimestamp(),
+        });
+      } else {
+        // SAVED → APPLIED upgrade: append, never overwrite existing history
+        await updateDoc(doc(db, "applications", appId), {
+          status: to,
+          history: arrayUnion({ status: to, at: new Date() }),
+          updatedAt: serverTimestamp(),
+        });
+      }
+      setAppStatus(to);
+      toast(to === "APPLIED" ? COPY.drives.toastApplied : COPY.drives.toastSaved, "success");
     } catch {
       toast(COPY.drives.toastMissing, "error");
     } finally {
       setSaving(false);
     }
   }
+
+  const stageLabel = (s: AppStatus) => STAGES.find((st) => st.key === s)?.label ?? s;
+  const actionable = appStatus === null || appStatus === "SAVED";
 
   return (
     <div className="pt-2 max-w-[680px]">
@@ -174,14 +190,34 @@ export function DriveDetail() {
       </section>
 
       <div className="flex flex-col gap-2 mt-5 pb-4">
-        <button
-          type="button"
-          onClick={save}
-          disabled={saved || saving}
-          className="w-full h-11 flex items-center justify-center rounded-lg bg-brand text-white text-[15px] font-semibold hover:bg-brand-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
-        >
-          {saved ? COPY.drives.saved : saving ? "…" : COPY.drives.saveToBoard}
-        </button>
+        {actionable ? (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => save("APPLIED")}
+              disabled={saving}
+              className="flex-1 h-11 flex items-center justify-center rounded-lg bg-brand text-white text-[15px] font-semibold hover:bg-brand-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+            >
+              {saving ? "…" : COPY.drives.apply}
+            </button>
+            <button
+              type="button"
+              onClick={() => save("SAVED")}
+              disabled={saving || appStatus === "SAVED"}
+              className="flex-1 h-11 flex items-center justify-center rounded-lg border border-line bg-surface text-ink text-[15px] font-semibold hover:bg-canvas transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+            >
+              {appStatus === "SAVED" ? COPY.drives.saved : COPY.drives.saveToBoard}
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            disabled
+            className="w-full h-11 flex items-center justify-center rounded-lg bg-brand/10 text-brand text-[15px] font-semibold cursor-default"
+          >
+            {stageLabel(appStatus ?? "APPLIED")}
+          </button>
+        )}
         <IcsButton drive={drive} />
       </div>
     </div>
