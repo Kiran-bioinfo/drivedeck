@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { collection, doc, getDoc, onSnapshot, query, where } from "firebase/firestore";
-import { Github as GithubIcon } from "lucide-react";
 import { db } from "../lib/firebase";
 import type { Activity, PublicProfile } from "../lib/types";
 import { computeScore, streakDays } from "../lib/scoring";
 import { COPY, portfolioUrl } from "../lib/copy";
 import { epochMs } from "../lib/time";
 import { PortfolioHeader } from "../components/PortfolioHeader";
+import { Logo } from "../components/Logo";
 import { ActivityRow } from "../components/ActivityRow";
 import { TimelineStrip } from "../components/TimelineStrip";
 import { FormulaSheet } from "../components/FormulaSheet";
@@ -200,7 +200,7 @@ export function Portfolio() {
           to="/"
           className="inline-flex items-center gap-1 text-[13px] text-ink-muted hover:text-ink font-medium focus-visible:ring-2 focus-visible:ring-brand rounded-sm"
         >
-          <GithubIcon size={14} aria-hidden />
+          <Logo size={14} />
           {COPY.portfolio.footer}
         </Link>
       </footer>

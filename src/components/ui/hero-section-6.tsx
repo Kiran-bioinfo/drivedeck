@@ -9,6 +9,7 @@
 import { Link } from "react-router-dom";
 import { motion, MotionConfig, Variants } from "motion/react";
 import { BadgeCheck } from "lucide-react";
+import { Logo } from "../Logo";
 import { AnimatedGroup } from "./animated-group";
 import { COPY } from "../../lib/copy";
 
@@ -135,7 +136,10 @@ export function HeroSection6({ onGetStarted }: HeroSection6Props) {
 
         {/* Navbar */}
         <nav className="w-full relative z-10 flex justify-between items-center py-4 px-4 sm:px-6 border-b border-black/10">
-          <span className="font-bold text-base tracking-tight">DriveDeck</span>
+          <span className="inline-flex items-center gap-2 font-bold text-base tracking-tight">
+            <Logo size={26} />
+            DriveDeck
+          </span>
 
           <div className="items-center gap-4 hidden md:flex">
             {NAV_ITEMS.map((item) => (

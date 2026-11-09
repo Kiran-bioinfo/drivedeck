@@ -6,6 +6,7 @@ import { Briefcase, Home, Kanban, LogOut, Plus, UserRound } from "lucide-react";
 import { auth, db } from "../lib/firebase";
 import { COPY } from "../lib/copy";
 import { useToast } from "./Toaster";
+import { Logo } from "./Logo";
 
 interface NavProps {
   portfolioSlug: string;
@@ -41,7 +42,8 @@ export function Sidebar({ portfolioSlug }: NavProps) {
 
   return (
     <aside className="hidden lg:flex fixed top-0 bottom-0 left-0 w-60 flex-col bg-surface border-r border-line p-4 gap-1">
-      <Link to="/dashboard" className="font-bold text-lg text-brand mb-4 h-11 flex items-center">
+      <Link to="/dashboard" className="font-bold text-lg text-brand mb-4 h-11 flex items-center gap-2">
+        <Logo size={28} />
         DriveDeck
       </Link>
       {items.map(({ key, to, label, icon: Icon }) => (

@@ -7,6 +7,7 @@ import { googleProvider } from "../lib/providers";
 import { COPY } from "../lib/copy";
 import { useAuth } from "../context/AuthContext";
 import { GoogleIcon } from "../components/GoogleIcon";
+import { Logo } from "../components/Logo";
 import { HeroSection6 } from "../components/ui/hero-section-6";
 import { ScrollingStory } from "../components/ui/scrolling-story";
 import DoodleCrewFooter, { type CrewMember, type FooterColumn } from "../components/ui/doodle-crew-footer";
@@ -233,6 +234,10 @@ export function Landing() {
             >
               <X size={20} aria-hidden />
             </button>
+            <span className="inline-flex items-center gap-2 font-bold text-[15px] tracking-tight mb-4">
+              <Logo size={26} />
+              DriveDeck
+            </span>
             <span aria-hidden className="w-12 h-12 rounded-xl bg-brand/10 text-brand flex items-center justify-center mb-4">
               <GoogleIcon size={24} />
             </span>
