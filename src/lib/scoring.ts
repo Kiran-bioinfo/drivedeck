@@ -12,10 +12,15 @@ export const WEIGHTS = {
 // PRD §13 edge case (decision at build time): cap DSA influence at 20 sets.
 export const DSA_CAP = 20;
 
-const DAY = 86_400_000;
-
 function startOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+// Calendar-day −1 (audit 2.7): subtracting 24h of real time from local midnight
+// lands at 23:00 two days back across a DST spring-forward, which silently
+// breaks the streak walk. Date Y/M/D−1 normalizes on the calendar instead.
+function prevDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1);
 }
 
 // Consecutive calendar days (ending today or yesterday) with ≥ 1 activity.
@@ -23,13 +28,13 @@ export function streakDays(activities: Activity[], now: Date = new Date()): numb
   const days = new Set(activities.map((a) => startOfDay(a.date.toDate()).getTime()));
   let cursor = startOfDay(now);
   if (!days.has(cursor.getTime())) {
-    cursor = new Date(cursor.getTime() - DAY);
+    cursor = prevDay(cursor);
     if (!days.has(cursor.getTime())) return 0;
   }
   let streak = 0;
   while (days.has(cursor.getTime())) {
     streak += 1;
-    cursor = new Date(cursor.getTime() - DAY);
+    cursor = prevDay(cursor);
   }
   return streak;
 }

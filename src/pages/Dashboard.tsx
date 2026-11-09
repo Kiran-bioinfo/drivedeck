@@ -120,7 +120,9 @@ export function Dashboard() {
     const latestDsa = acts.filter((a) => a.type === "DSA")[0]; // acts are date-desc
     if (latestDsa) {
       const dsaDay = startOfDay(latestDsa.date.toDate()).getTime();
-      const yesterday = startOfDay(now).getTime() - DAY;
+      // calendar-day −1 (audit 2.7): `startOfDay - DAY` lands at 23:00 two days
+      // back across a DST spring-forward, mis-classifying the DSA focus item
+      const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).getTime();
       if (dsaDay < yesterday) out.push({ kind: "log_dsa", icon: PenLine, body: COPY.dashboard.focusLogDsa(streak) });
     }
 
