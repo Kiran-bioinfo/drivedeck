@@ -1,28 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { signInWithPopup, signInWithRedirect } from "firebase/auth";
-import { ArrowRight, Award, BadgeCheck, FolderGit2, Loader2, X } from "lucide-react";
+import { ArrowRight, Loader2, X } from "lucide-react";
 import { auth } from "../lib/firebase";
 import { googleProvider } from "../lib/providers";
 import { COPY } from "../lib/copy";
 import { useAuth } from "../context/AuthContext";
 import { GoogleIcon } from "../components/GoogleIcon";
 import { HeroSection6 } from "../components/ui/hero-section-6";
+import { ScrollingStory } from "../components/ui/scrolling-story";
 import DoodleCrewFooter, { type CrewMember, type FooterColumn } from "../components/ui/doodle-crew-footer";
-
-const CARD_ICONS = [BadgeCheck, FolderGit2, Award] as const;
-// reference pairing: dark panel + bright panel, in our blue/cream palette
-const CARD_PANELS = [
-  "bg-accent text-white",
-  "bg-cream text-ink border border-ink/10",
-  "bg-ink text-white",
-] as const;
-const CARD_TILE = [
-  "bg-white/20 text-white",
-  "bg-white/70 text-ink",
-  "bg-white/20 text-white",
-] as const;
-const CARD_BODY = ["text-white/80", "text-ink/70", "text-white/70"] as const;
 
 const REDUCED = "(prefers-reduced-motion: reduce)";
 
@@ -133,19 +120,6 @@ function Reveal({ children, delay = 0, className = "" }: { children: React.React
   );
 }
 
-// pointer: fine only — subtle 3D card tilt on mouse move
-function tiltMove(e: React.MouseEvent<HTMLElement>) {
-  if (!window.matchMedia("(pointer: fine)").matches || window.matchMedia(REDUCED).matches) return;
-  const el = e.currentTarget;
-  const r = el.getBoundingClientRect();
-  const x = (e.clientX - r.left) / r.width - 0.5;
-  const y = (e.clientY - r.top) / r.height - 0.5;
-  el.style.transform = `perspective(900px) rotateX(${(-y * 6).toFixed(2)}deg) rotateY(${(x * 9).toFixed(2)}deg) translateY(-3px)`;
-}
-function tiltReset(e: React.MouseEvent<HTMLElement>) {
-  e.currentTarget.style.transform = "";
-}
-
 // PRD §F0 — pitch in two screens; signed-in visitors skip straight to the dashboard.
 // Interactive hero: WebGL cluster behind the copy + CSS phone mockup (README "Why three").
 export function Landing() {
@@ -197,29 +171,10 @@ export function Landing() {
           nav + CTAs wire into the sign-in card */}
       <HeroSection6 onGetStarted={() => { setSignErr(null); setSignInOpen(true); }} />
 
-      {/* 3 USPs — indigo / mint / cream panels, scroll-revealed, tilt on hover */}
-      <section id="features" className="max-w-[1024px] mx-auto px-4 pb-14">
-        <div className="grid sm:grid-cols-3 gap-4">
-          {COPY.landing.cards.map((c, i) => {
-            const Icon = CARD_ICONS[i];
-            return (
-              <Reveal key={c.title} delay={i * 120}>
-                <article
-                  onMouseMove={tiltMove}
-                  onMouseLeave={tiltReset}
-                  className={`rounded-xl p-5 h-full transition-transform duration-300 will-change-transform ${CARD_PANELS[i]}`}
-                >
-                  <span aria-hidden className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${CARD_TILE[i]}`}>
-                    <Icon size={20} strokeWidth={2} />
-                  </span>
-                  <h3 className="font-semibold text-[15px] mb-2">{c.title}</h3>
-                  <p className={`text-[14px] ${CARD_BODY[i]}`}>{c.body}</p>
-                </article>
-              </Reveal>
-            );
-          })}
-        </div>
-      </section>
+      {/* scrolling story — 21st.dev interactive-scrolling-story behavior rebuilt on
+          motion useScroll (zero new deps): sticky viewport, copy crossfades left,
+          CSS-drawn visuals slide in right; copy strings = COPY.landing.cards */}
+      <ScrollingStory />
 
       {/* how it works — full-bleed indigo block, staggered reveal */}
       <section id="how" className="bg-accent text-white relative overflow-hidden">

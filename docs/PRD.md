@@ -396,9 +396,12 @@ Copy principles: plain student language; numbers over adjectives; honesty in eve
 | Landing | Primary CTA | Start free — 2 min |
 | Landing | Secondary CTA | See a live portfolio |
 | Landing | Nav links | Features · How it works · Get started |
-| Landing | Card 1 title / body | Deadlines you can trust / Every drive shows its source link and the date we last checked it. No forwards, no fake dates. |
-| Landing | Card 2 title / body | One board for your pipeline / Drag every application from Saved to Offer. See exactly where you stand. |
-| Landing | Card 3 title / body | Your portfolio builds itself / Log a project or certificate with its link once — your live portfolio updates on its own. |
+| Landing | Scrolling story beat 1 title / body | Deadlines you can trust / Every drive shows its source link and the date we last checked it. No forwards, no fake dates. |
+| Landing | Scrolling story beat 2 title / body | One board for your pipeline / Drag every application from Saved to Offer. See exactly where you stand. |
+| Landing | Scrolling story beat 3 title / body | Your portfolio builds itself / Log a project or certificate with its link once — your live portfolio updates on its own. |
+| Landing | Scrolling story, deadline mock labels | Drive / Verified / Frontend Engineer — off-campus drive / Source link attached / Last checked 2 days ago |
+| Landing | Scrolling story, kanban mock columns | Saved / Interview / Offer |
+| Landing | Scrolling story, portfolio mock labels | Kiran Patil / Live portfolio · updates itself / 78 / Project — CropSense / Certificate — Cloud Fundamentals |
 | Landing | Trust strip | Verified deadlines · No spam · Free for students |
 | Footer | Line | Built for JioCoder Hackathon 2026 |
 
