@@ -7,6 +7,7 @@ import { useAuth } from "../context/AuthContext";
 import { COPY } from "../lib/copy";
 import { KanbanBoard } from "../components/KanbanBoard";
 import { useToast } from "../components/Toaster";
+import { epochMs } from "../lib/time";
 
 // PRD §F4 — one ordered read of applications + the drives map for cards.
 export function Pipeline() {
@@ -17,16 +18,31 @@ export function Pipeline() {
 
   useEffect(() => {
     if (!uid) return;
-    return onSnapshot(query(collection(db, "applications"), where("uid", "==", uid)), (s) => {
-      const list = s.docs.map((d) => ({ id: d.id, ...d.data() } as Application));
-      list.sort((a, b) => b.updatedAt.toMillis() - a.updatedAt.toMillis());
-      setApps(list);
-    });
+    return onSnapshot(
+      query(collection(db, "applications"), where("uid", "==", uid)),
+      (s) => {
+        const list = s.docs.map((d) => ({ id: d.id, ...d.data() } as Application));
+        list.sort((a, b) => epochMs(b.updatedAt) - epochMs(a.updatedAt));
+        setApps(list);
+      },
+      (err) => {
+        // never strand the board on an endless skeleton (audit: listener failures)
+        console.error("[DriveDeck] applications listener failed:", err);
+        setApps([]);
+      },
+    );
   }, [uid]);
 
   useEffect(() => {
     // drives are few; one listener serves every card's company/avatar/role
-    return onSnapshot(collection(db, "drives"), (s) => setDrives(s.docs.map((d) => ({ id: d.id, ...d.data() } as Drive))));
+    return onSnapshot(
+      collection(db, "drives"),
+      (s) => setDrives(s.docs.map((d) => ({ id: d.id, ...d.data() } as Drive))),
+      (err) => {
+        console.error("[DriveDeck] drives listener failed:", err);
+        setDrives([]);
+      },
+    );
   }, []);
 
   const drivesById = useMemo(

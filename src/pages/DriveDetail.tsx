@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useOutletContext, useParams } from "react-router-dom";
-import { arrayUnion, doc, getDoc, onSnapshot, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import { arrayUnion, doc, getDoc, onSnapshot, runTransaction, serverTimestamp } from "firebase/firestore";
 import { ChevronLeft } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
@@ -35,10 +35,19 @@ export function DriveDetail() {
   useEffect(() => {
     if (!id) return;
     // listener keeps an already-open detail honest if the seed script corrects a date
-    return onSnapshot(doc(db, "drives", id), (snap) => {
-      if (snap.exists()) setDrive({ id: snap.id, ...snap.data() } as Drive);
-      else setMissing(true);
-    });
+    return onSnapshot(
+      doc(db, "drives", id),
+      (snap) => {
+        if (snap.exists()) setDrive({ id: snap.id, ...snap.data() } as Drive);
+        else setMissing(true);
+      },
+      (err) => {
+        // a failed read must not strand the page on an endless skeleton
+        // (audit: listener failures) — fall back to the designed "removed" state
+        console.error("[DriveDeck] drive listener failed:", err);
+        setMissing(true);
+      },
+    );
   }, [id]);
 
   const uidFinal = uid;
@@ -46,13 +55,22 @@ export function DriveDetail() {
   useEffect(() => {
     // one application check — real status, not a listener; board moves refresh via navigation
     if (!id || !uidFinal) return;
+    let cancelled = false;
     setAppStatus(null);
     getDoc(doc(db, "applications", applicationId(uidFinal, id)))
-      .then((d) => setAppStatus(d.exists() ? ((d.data().status as AppStatus) ?? null) : null))
+      .then((d) => {
+        // drop stale responses when the route changes mid-flight
+        if (cancelled) return;
+        setAppStatus(d.exists() ? ((d.data().status as AppStatus) ?? null) : null);
+      })
       .catch((e) => {
+        if (cancelled) return;
         console.error("[DriveDeck] application check failed:", e);
-        setAppStatus(null); // optimistic; the round-trip on save is authoritative
+        setAppStatus(null); // optimistic; save() re-reads authoritatively in a transaction
       });
+    return () => {
+      cancelled = true;
+    };
   }, [id, uidFinal]);
 
   if (missing) {
@@ -77,30 +95,43 @@ export function DriveDetail() {
 
   async function save(to: AppStatus) {
     if (!drive || !uidFinal || saving) return;
-    if (appStatus && appStatus !== "SAVED") return; // already progressed on the board
     setSaving(true);
     try {
       const appId = applicationId(uidFinal, drive.id);
-      if (!appStatus) {
-        // first action: either straight to APPLIED or bookmarked as SAVED
-        await setDoc(doc(db, "applications", appId), {
-          uid: uidFinal,
-          driveId: drive.id,
-          status: to,
-          // FieldValue sentinels cannot be nested inside arrays — use a client Date
-          history: [{ status: to, at: new Date() }],
-          updatedAt: serverTimestamp(),
-        });
-      } else {
+      const appRef = doc(db, "applications", appId);
+      // TRANSACTION: the lookup above can be slow / failed / stale, so save()
+      // never trusts `appStatus === null` as "no application". It re-reads the
+      // authoritative document first — this is what stops a click from wiping
+      // an existing INTERVIEW/OFFER history (audit: application overwrite race).
+      const finalStatus = await runTransaction(db, async (tx) => {
+        const snap = await tx.get(appRef);
+        if (!snap.exists()) {
+          // first action: either straight to APPLIED or bookmarked as SAVED
+          tx.set(appRef, {
+            uid: uidFinal,
+            driveId: drive.id,
+            status: to,
+            // FieldValue sentinels cannot be nested inside arrays — use a client Date
+            history: [{ status: to, at: new Date() }],
+            updatedAt: serverTimestamp(),
+          });
+          return to;
+        }
+        const current = ((snap.data().status as AppStatus) ?? null) as AppStatus | null;
+        // already progressed on the board → never downgrade, never overwrite
+        if (current && current !== "SAVED") return current;
         // SAVED → APPLIED upgrade: append, never overwrite existing history
-        await updateDoc(doc(db, "applications", appId), {
+        tx.update(appRef, {
           status: to,
           history: arrayUnion({ status: to, at: new Date() }),
           updatedAt: serverTimestamp(),
         });
+        return to;
+      });
+      setAppStatus(finalStatus);
+      if (finalStatus === to) {
+        toast(to === "APPLIED" ? COPY.drives.toastApplied : COPY.drives.toastSaved, "success");
       }
-      setAppStatus(to);
-      toast(to === "APPLIED" ? COPY.drives.toastApplied : COPY.drives.toastSaved, "success");
     } catch {
       toast(COPY.drives.toastMissing, "error");
     } finally {

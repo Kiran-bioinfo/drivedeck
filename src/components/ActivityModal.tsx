@@ -15,6 +15,7 @@ interface ActivityModalProps {
 }
 
 const URL_RE = /^https?:\/\/.+/;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const SUMMARY_MAX = 140;
 
 // Design.md 3.20 — bottom sheet on mobile, centered modal on desktop.
@@ -68,8 +69,10 @@ export function ActivityModal({ open, onClose, uid, editing }: ActivityModalProp
   const hasImage = image !== null;
   const validTitle = title.trim().length > 0;
   const validUrl = URL_RE.test(url.trim()); // must include protocol — the Evidence Rule
+  // a cleared / malformed date must not reach Timestamp.fromDate (audit: Save stuck)
+  const validDate = DATE_RE.test(date) && !Number.isNaN(new Date(`${date}T12:00:00`).getTime());
   // Evidence Rule (PRD §7.2): proof = valid link OR attached image
-  const canSave = validTitle && (validUrl || hasImage) && !saving && !compressing;
+  const canSave = validTitle && (validUrl || hasImage) && validDate && !saving && !compressing;
   const dirty = Boolean(title || summary || url || tags) || image !== null && image !== (editing?.image ?? null);
 
   function handleBackdrop() {
@@ -96,22 +99,24 @@ export function ActivityModal({ open, onClose, uid, editing }: ActivityModalProp
   async function handleSave() {
     if (!canSave) return;
     setSaving(true);
-    const tagList = tags.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 3);
-    const payload: { uid: string; type: Activity["type"]; title: string; summary: string; url: string; tags: string[]; date: Timestamp; image?: string | FieldValue } = {
-      uid,
-      type,
-      title: title.trim(),
-      summary: summary.trim().slice(0, SUMMARY_MAX),
-      url: url.trim(),
-      tags: tagList,
-      date: Timestamp.fromDate(new Date(`${date}T12:00:00`)),
-    };
-    // PRD §7.2 image lifecycle: set → write string; cleared → delete the field;
-    // untouched existing image → omit (keeps the document value)
-    const existingImage = editing?.image ?? null;
-    if (image) payload.image = image;
-    else if (existingImage != null) payload.image = deleteField();
     try {
+      // everything that can throw (date parsing above, payload build, the write)
+      // lives inside try so `finally` always restores Save (audit: stuck button)
+      const tagList = tags.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 3);
+      const payload: { uid: string; type: Activity["type"]; title: string; summary: string; url: string; tags: string[]; date: Timestamp; image?: string | FieldValue } = {
+        uid,
+        type,
+        title: title.trim(),
+        summary: summary.trim().slice(0, SUMMARY_MAX),
+        url: url.trim(),
+        tags: tagList,
+        date: Timestamp.fromDate(new Date(`${date}T12:00:00`)),
+      };
+      // PRD §7.2 image lifecycle: set → write string; cleared → delete the field;
+      // untouched existing image → omit (keeps the document value)
+      const existingImage = editing?.image ?? null;
+      if (image) payload.image = image;
+      else if (existingImage != null) payload.image = deleteField();
       if (editing) {
         await updateDoc(doc(db, "activities", editing.id), payload);
       } else {

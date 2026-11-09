@@ -39,21 +39,30 @@ export interface Drive {
   verifiedAt: Timestamp;
 }
 
-export interface Student {
+/**
+ * Public portfolio fields — stored in /portfolios/{uid} (public read).
+ * These are the ONLY fields anonymous visitors may see; email, marks, CGPA
+ * and backlogs live in the owner-only /users/{uid} document (firestore.rules).
+ */
+export interface PublicProfile {
   name: string;
-  email: string;
   college: string;
   branch: Branch;
   year: number;
-  tenth: number;
-  twelfth: number;
-  cgpa: number;
-  backlogs: number;
   targetRole: string;
   portfolioSlug: string;
   githubUrl?: string;
   linkedinUrl?: string;
   createdAt?: Timestamp;
+}
+
+/** Owner-only account + eligibility document — /users/{uid}. Never public. */
+export interface Student extends PublicProfile {
+  email: string;
+  tenth: number;
+  twelfth: number;
+  cgpa: number;
+  backlogs: number;
 }
 
 export type AppStatus = "SAVED" | "APPLIED" | "OA" | "INTERVIEW" | "OFFER" | "REJECTED";

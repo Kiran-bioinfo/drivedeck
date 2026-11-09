@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Award, BookOpen, Dumbbell, FolderGit2, ExternalLink, MoreHorizontal, BadgeCheck, Medal } from "lucide-react";
 import type { Activity, ActivityType } from "../lib/types";
 import { linkLabel, COPY } from "../lib/copy";
+import { safeHttpUrl } from "../lib/urls";
 
 const TYPE_ICON: Record<ActivityType, typeof FolderGit2> = {
   PROJECT: FolderGit2,
@@ -22,7 +23,11 @@ interface ActivityRowProps {
 export function ActivityRow({ activity, variant, onEdit, onDelete }: ActivityRowProps) {
   const Icon = TYPE_ICON[activity.type];
   const [menuOpen, setMenuOpen] = useState(false);
-  const label = linkLabel(activity.url);
+  // untrusted stored destination — re-checked before it becomes an href, and
+  // image-only evidence (url === "") renders no link at all instead of a
+  // broken empty one (audit: empty evidence link)
+  const href = safeHttpUrl(activity.url);
+  const label = href ? linkLabel(href) : "";
 
   return (
     <div className="bg-surface border border-line rounded-xl shadow-card p-3 flex items-start gap-3">
@@ -59,15 +64,17 @@ export function ActivityRow({ activity, variant, onEdit, onDelete }: ActivityRow
       </div>
       <div className="flex flex-col gap-1.5 items-end shrink-0">
         {variant === "public" ? (
-          <a
-            href={activity.url}
-            target="_blank"
-            rel="noopener"
-            className="inline-flex h-9 items-center gap-1.5 px-3 rounded-lg border border-line bg-canvas text-[13px] font-medium text-ink hover:bg-line/60 focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
-          >
-            {label}
-            <ExternalLink size={14} strokeWidth={2} aria-hidden />
-          </a>
+          href ? (
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-9 items-center gap-1.5 px-3 rounded-lg border border-line bg-canvas text-[13px] font-medium text-ink hover:bg-line/60 focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+            >
+              {label}
+              <ExternalLink size={14} strokeWidth={2} aria-hidden />
+            </a>
+          ) : null
         ) : (
           <>
             <button
@@ -78,15 +85,17 @@ export function ActivityRow({ activity, variant, onEdit, onDelete }: ActivityRow
             >
               <MoreHorizontal size={18} strokeWidth={2} aria-hidden />
             </button>
-            <a
-              href={activity.url}
-              target="_blank"
-              rel="noopener"
-              className="inline-flex h-8 items-center gap-1 px-2 rounded-lg border border-line bg-canvas text-[12px] font-medium text-ink hover:bg-line/60 focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
-            >
-              {label}
-              <ExternalLink size={12} strokeWidth={2} aria-hidden />
-            </a>
+            {href && (
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-8 items-center gap-1 px-2 rounded-lg border border-line bg-canvas text-[12px] font-medium text-ink hover:bg-line/60 focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+              >
+                {label}
+                <ExternalLink size={12} strokeWidth={2} aria-hidden />
+              </a>
+            )}
           </>
         )}
       </div>

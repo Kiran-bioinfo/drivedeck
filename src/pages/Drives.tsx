@@ -32,8 +32,14 @@ export function Drives() {
 
   useEffect(() => {
     // no orderBy: documents missing regDeadline would be silently excluded
-    return onSnapshot(collection(db, "drives"), (s) =>
-      setDrives(s.docs.map((d) => ({ id: d.id, ...d.data() } as Drive)))
+    return onSnapshot(
+      collection(db, "drives"),
+      (s) => setDrives(s.docs.map((d) => ({ id: d.id, ...d.data() } as Drive))),
+      (err) => {
+        // never strand the list on an endless skeleton (audit: listener failures)
+        console.error("[DriveDeck] drives listener failed:", err);
+        setDrives([]);
+      },
     );
   }, []);
 

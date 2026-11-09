@@ -34,6 +34,29 @@ if (!fs.existsSync(keyPath)) {
   process.exit(1);
 }
 
+const keyJson = JSON.parse(fs.readFileSync(keyPath, "utf8"));
+
+// PROJECT SAFEGUARD (audit: seed reruns can overwrite production data) — refuse
+// to write unless the service account targets the project the app points at.
+// --force overrides after an explicit human decision.
+const envProject = (() => {
+  const envPath = path.join(__dirname, "..", ".env");
+  if (!fs.existsSync(envPath)) return null;
+  const m = fs.readFileSync(envPath, "utf8").match(/^VITE_FIREBASE_PROJECT_ID=(.+)$/m);
+  return m ? m[1].trim() : null;
+})();
+const FORCE = process.argv.includes("--force");
+if (envProject && keyJson.project_id !== envProject) {
+  console.error(
+    `\n[DriveDeck] REFUSING TO SEED: the service account targets "${keyJson.project_id}" ` +
+      `but .env points at "${envProject}".\n` +
+      "This guard exists so a demo seed can never overwrite production data.\n" +
+      "If this really is intended, re-run with --force.\n"
+  );
+  if (!FORCE) process.exit(1);
+  console.warn(`⚠ --force: continuing against "${keyJson.project_id}" anyway.\n`);
+}
+
 initializeApp({ credential: cert(keyPath) });
 const db = getFirestore();
 
@@ -46,6 +69,9 @@ const slugify = (s) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
 const driveId = (company, program, batch) => `${slugify(company)}_${slugify(program)}_${slugify(batch)}`;
 const applicationId = (uid, drive) => `${uid}_${drive}`;
+// Deterministic activity IDs — re-running the seed must be idempotent instead of
+// appending a duplicate set every time (audit: duplicate demo activities).
+const activityId = (uid, a) => `${uid}_${slugify(a.type)}_${slugify(a.title)}`.slice(0, 500);
 
 // ---------------------------------------------------------------------------
 // 1. COMPANIES (PRD §12.2) — upsert, idempotent.
@@ -319,11 +345,22 @@ async function seedDemoUser() {
 
   const batch = db.batch();
   batch.set(users, { ...DEMO_PROFILE, email: `${DEMO_UID}@demo.local`, createdAt: serverTimestamp() });
+  // PUBLIC portfolio doc — display-safe fields only (firestore.rules rejects
+  // anything outside that allow-list). The private users doc keeps email/marks.
+  batch.set(db.collection("portfolios").doc(DEMO_UID), {
+    name: DEMO_PROFILE.name,
+    college: DEMO_PROFILE.college,
+    branch: DEMO_PROFILE.branch,
+    year: DEMO_PROFILE.year,
+    targetRole: DEMO_PROFILE.targetRole,
+    portfolioSlug: DEMO_PROFILE.portfolioSlug,
+    createdAt: serverTimestamp(),
+  });
   batch.set(slugRef, { uid: DEMO_UID });
 
   for (const a of DEMO_ACTIVITIES) {
     // activities is a top-level collection (public read for portfolios)
-    batch.set(db.collection("activities").doc(), {
+    batch.set(db.collection("activities").doc(activityId(DEMO_UID, a)), {
       uid: DEMO_UID,
       type: a.type,
       title: a.title,
@@ -347,8 +384,8 @@ async function seedDemoUser() {
   }
 
   await batch.commit();
-  console.log("✔ demo user users/" + DEMO_UID + " + usernames/kiran + activities + applications seeded");
-  console.log("  → blueprint ready: sign in with that Google account on localhost,Kirans /u/kiran renders live");
+  console.log("✔ demo user users/" + DEMO_UID + " + portfolios/ + usernames/kiran + activities + applications seeded");
+  console.log("  → blueprint ready: sign in with that Google account on localhost, Kiran's /u/kiran renders live");
 }
 
 (async () => {

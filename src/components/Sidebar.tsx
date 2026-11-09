@@ -116,9 +116,19 @@ export function useOwnProfile<T>(uid: string | null): T | undefined | null {
   const [profile, setProfile] = useState<T | undefined | null>();
   useEffect(() => {
     if (!uid) return;
-    return onSnapshot(doc(db, "users", uid), (d) => {
-      setProfile(d.exists() ? ({ id: d.id, ...d.data() } as T) : null);
-    });
+    return onSnapshot(
+      doc(db, "users", uid),
+      (d) => {
+        setProfile(d.exists() ? ({ id: d.id, ...d.data() } as T) : null);
+      },
+      (err) => {
+        // a failed read must not strand the shell on an endless splash
+        // (audit: listener failures) — fall through to the onboarding path,
+        // whose own guard re-reads and recovers once the read succeeds.
+        console.error("[DriveDeck] profile listener failed:", err);
+        setProfile(null);
+      },
+    );
   }, [uid]);
   return profile;
 }

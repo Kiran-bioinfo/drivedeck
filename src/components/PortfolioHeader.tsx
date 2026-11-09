@@ -1,10 +1,11 @@
-import type { Student } from "../lib/types";
+import type { PublicProfile } from "../lib/types";
 import { COPY, portfolioUrl } from "../lib/copy";
+import { safeHttpUrl } from "../lib/urls";
 import { ScoreRing } from "./ScoreRing";
 import { ExternalLink, Share2, Github, Linkedin } from "lucide-react";
 
 interface PortfolioHeaderProps {
-  user: Student;
+  user: PublicProfile;
   slug: string;
   score: number;
   activityCount: number;
@@ -25,6 +26,9 @@ function initialsOf(name: string): string {
 // "Every item evidence-linked" badge (hidden at 0 activities), share, GitHub/LinkedIn buttons.
 export function PortfolioHeader({ user, slug, score, activityCount, onShare, onHow }: PortfolioHeaderProps) {
   const shareUrl = portfolioUrl(slug);
+  // re-validate stored destinations before they become hrefs (audit 2.4)
+  const github = safeHttpUrl(user.githubUrl);
+  const linkedin = safeHttpUrl(user.linkedinUrl);
 
   return (
     <header className="text-center mb-6">
@@ -41,24 +45,24 @@ export function PortfolioHeader({ user, slug, score, activityCount, onShare, onH
         </p>
 
         {/* v1.1: GitHub/LinkedIn are saved profile URLs as link buttons — NOT OAuth */}
-        {(user.githubUrl || user.linkedinUrl) && (
+        {(github || linkedin) && (
           <div className="flex gap-2">
-            {user.githubUrl && (
+            {github && (
               <a
-                href={user.githubUrl}
+                href={github}
                 target="_blank"
-                rel="noopener"
+                rel="noopener noreferrer"
                 className="inline-flex h-9 items-center gap-1.5 px-3 rounded-lg border border-line bg-surface text-[13px] font-medium text-ink hover:bg-canvas focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
               >
                 <Github size={14} strokeWidth={2} aria-hidden />
                 GitHub
               </a>
             )}
-            {user.linkedinUrl && (
+            {linkedin && (
               <a
-                href={user.linkedinUrl}
+                href={linkedin}
                 target="_blank"
-                rel="noopener"
+                rel="noopener noreferrer"
                 className="inline-flex h-9 items-center gap-1.5 px-3 rounded-lg border border-line bg-surface text-[13px] font-medium text-ink hover:bg-canvas focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
               >
                 <Linkedin size={14} strokeWidth={2} aria-hidden />

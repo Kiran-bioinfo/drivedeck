@@ -3,9 +3,10 @@ import { Link, useParams } from "react-router-dom";
 import { collection, doc, getDoc, onSnapshot, query, where } from "firebase/firestore";
 import { Github as GithubIcon } from "lucide-react";
 import { db } from "../lib/firebase";
-import type { Activity, Student } from "../lib/types";
+import type { Activity, PublicProfile } from "../lib/types";
 import { computeScore, streakDays } from "../lib/scoring";
 import { COPY, portfolioUrl } from "../lib/copy";
+import { epochMs } from "../lib/time";
 import { PortfolioHeader } from "../components/PortfolioHeader";
 import { ActivityRow } from "../components/ActivityRow";
 import { TimelineStrip } from "../components/TimelineStrip";
@@ -17,42 +18,76 @@ export function Portfolio() {
   const { slug } = useParams<{ slug: string }>();
   const [uid, setUid] = useState<string | null>(null);
   const [resolved, setResolved] = useState(false);
-  const [profile, setProfile] = useState<Student | null>(null);
+  const [profile, setProfile] = useState<PublicProfile | null>(null);
+  // "loading" until the portfolio read settles — never flash the 404 screen
+  // while the profile is still in flight (audit: premature missing-profile).
+  const [profileState, setProfileState] = useState<"loading" | "loaded">("loading");
   const [acts, setActs] = useState<Activity[] | null>(null);
   const [formulaOpen, setFormulaOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!slug) return;
+    let cancelled = false;
     setResolved(false);
     setUid(null);
     // slug lookup; failure (offline / DB missing) degrades to the designed 404,
-    // never an infinite skeleton
+    // never an infinite skeleton. `cancelled` drops stale responses when the
+    // route changes mid-flight.
     getDoc(doc(db, "usernames", slug))
       .then((d) => {
+        if (cancelled) return;
         const owner = d.exists() ? (d.data() as { uid: string }).uid : null;
         setUid(owner);
         setResolved(true);
       })
       .catch((e) => {
+        if (cancelled) return;
         console.error("[DriveDeck] portfolio lookup failed:", e);
         setResolved(true);
       });
+    return () => {
+      cancelled = true;
+    };
   }, [slug]);
 
   useEffect(() => {
     if (!uid) return;
-    getDoc(doc(db, "users", uid))
-      .then((d) => setProfile(d.exists() ? (d.data() as Student) : null))
-      .catch((e) => console.error("[DriveDeck] profile read failed:", e));
-    return onSnapshot(query(collection(db, "activities"), where("uid", "==", uid)), (s) => {
-      const list = s.docs.map((d) => ({ id: d.id, ...d.data() } as Activity));
-      list.sort((a, b) => b.date.toMillis() - a.date.toMillis());
-      setActs(list);
-    });
+    let cancelled = false;
+    setProfile(null);
+    setProfileState("loading");
+    // PUBLIC portfolio doc only — the owner-only /users/{uid} record
+    // (email, marks, CGPA, backlogs) is never read from this page.
+    getDoc(doc(db, "portfolios", uid))
+      .then((d) => {
+        if (cancelled) return;
+        setProfile(d.exists() ? (d.data() as PublicProfile) : null);
+        setProfileState("loaded");
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        console.error("[DriveDeck] portfolio read failed:", e);
+        setProfileState("loaded"); // profile stays null → designed 404
+      });
+    const unsub = onSnapshot(
+      query(collection(db, "activities"), where("uid", "==", uid)),
+      (s) => {
+        if (cancelled) return;
+        const list = s.docs.map((d) => ({ id: d.id, ...d.data() } as Activity));
+        list.sort((a, b) => epochMs(b.date) - epochMs(a.date));
+        setActs(list);
+      },
+      (err) => {
+        if (!cancelled) console.error("[DriveDeck] portfolio activities listener failed:", err);
+      },
+    );
+    return () => {
+      cancelled = true;
+      unsub();
+    };
   }, [uid]);
 
-  if (!resolved) {
+  if (!resolved || (uid !== null && profileState === "loading")) {
     return (
       <div className="min-h-screen bg-canvas flex items-center justify-center">
         <div className="skeleton h-16 w-16 rounded-full" />
@@ -89,7 +124,7 @@ export function Portfolio() {
     }
   }
 
-  const userForHeader: Student = {
+  const userForHeader: PublicProfile = {
     ...profile,
     portfolioSlug: slug ?? profile.portfolioSlug,
   };

@@ -2,48 +2,150 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{db}/documents {
 
-    // 1. Profiles: public read (portfolios), owner-only write, never deletable
-    match /users/{uid} {
-      allow read: if true;
-      allow create, update: if request.auth != null && request.auth.uid == uid;
-      allow delete: if false;
+    // ---------------------------------------------------------------- helpers
+    function signedIn() {
+      return request.auth != null;
     }
 
-    // 2. Slug registry: create-once, immutable — uniqueness + no portfolio hijacking
-    match /usernames/{slug} {
-      allow read: if true;
-      allow create: if request.auth != null
-                    && request.resource.data.uid == request.auth.uid;
+    // Display-safe fields only. The allow-list is the structural guarantee that
+    // email / marks / backlogs can never be written into a PUBLIC document.
+    function validPublicProfile(d) {
+      return d.keys().hasOnly(['name', 'college', 'branch', 'year', 'targetRole',
+                               'portfolioSlug', 'githubUrl', 'linkedinUrl', 'createdAt'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 80
+        && d.college is string && d.college.size() <= 120
+        && d.branch in ['CSE', 'IT', 'ECE', 'EEE', 'MECH', 'CIVIL', 'OTHER']
+        && d.year is int && d.year >= 1 && d.year <= 4
+        && d.targetRole is string
+        && d.portfolioSlug is string
+        && d.portfolioSlug.matches('^[a-z0-9_]{3,20}$');
+    }
+
+    // Evidence Rule (PRD §7.2): proof = a valid link OR an attached image.
+    function hasProof(d) {
+      return ('url' in d && d.url is string && d.url.matches('https?://.+'))
+        || ('image' in d && d.image is string
+            && d.image.matches('^data:image/(jpeg|png|webp);base64,.+'));
+    }
+
+    // Full schema for an activity — types, enums, sizes, sane date range.
+    // createdAt is a serverTimestamp() sentinel, so it is allowed but not typed.
+    // Date bounds are fixed timestamps (no duration arithmetic) so the rules
+    // compile deterministically; they reject epoch-garbage and absurd years.
+    function validActivity(d) {
+      return d.keys().hasOnly(['uid', 'type', 'title', 'summary', 'url',
+                               'tags', 'date', 'image', 'createdAt'])
+        && d.uid is string
+        && d.type in ['PROJECT', 'CERT', 'COURSE', 'DSA', 'ACHIEVEMENT']
+        && d.title is string && d.title.size() > 0 && d.title.size() <= 200
+        && d.summary is string && d.summary.size() <= 140
+        && ('url' in d) && d.url is string
+        && (d.url == '' || d.url.matches('https?://.+'))
+        && ('tags' in d) && d.tags is list && d.tags.size() <= 3
+        && ('date' in d) && d.date is timestamp
+        && d.date >= timestamp.date(2000, 1, 1)
+        && d.date <= timestamp.date(2100, 1, 1);
+    }
+
+    // Application document: owner + drive + one of the six board stages + history.
+    function validApplication(d) {
+      return d.uid is string
+        && d.driveId is string && d.driveId.size() > 0
+        && d.status in ['SAVED', 'APPLIED', 'OA', 'INTERVIEW', 'OFFER', 'REJECTED']
+        && d.history is list && d.history.size() >= 1 && d.history.size() <= 500;
+    }
+
+    // ------------------------------------------------------------------
+    // 1. PRIVATE profile — owner-only read (was: public read). The public
+    //    portfolio now lives in /portfolios, so email / CGPA / backlogs are
+    //    no longer enumerable by anonymous visitors. Create-once: no update,
+    //    so a second onboarding tab cannot overwrite a completed profile.
+    // ------------------------------------------------------------------
+    match /users/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0;
       allow update, delete: if false;
     }
 
-    // 3. Drives & companies: world-readable, client-writes impossible.
+    // ------------------------------------------------------------------
+    // 2. PUBLIC portfolio — display-safe fields only, public read for the
+    //    shareable /u/{slug} page, owner-only write.
+    // ------------------------------------------------------------------
+    match /portfolios/{uid} {
+      allow read: if true;
+      allow create, update: if signedIn()
+                            && request.auth.uid == uid
+                            && validPublicProfile(request.resource.data);
+      allow delete: if false;
+    }
+
+    // ------------------------------------------------------------------
+    // 3. Slug registry — create-once, immutable; one slug per account
+    //    (an account that already owns a profile cannot claim another slug,
+    //    which closes the unlimited-squatting hole).
+    // ------------------------------------------------------------------
+    match /usernames/{slug} {
+      allow read: if true;
+      allow create: if signedIn()
+                    && request.resource.data.uid == request.auth.uid
+                    && slug.matches('^[a-z0-9_]{3,20}$')
+                    && !(slug in ['u', 'login', 'admin', 'api', 'kiran', 'drivedeck'])
+                    && !exists(/databases/$(db)/documents/users/$(request.auth.uid));
+      allow update, delete: if false;
+    }
+
+    // ------------------------------------------------------------------
+    // 4. Drives & companies: world-readable, client-writes impossible.
     //    Only the Admin SDK (seed script) can write — the Verified-Data USP.
+    // ------------------------------------------------------------------
     match /drives/{id}    { allow read: if true; allow write: if false; }
     match /companies/{id} { allow read: if true; allow write: if false; }
 
-    // 4. Applications: doc ID is "{uid}_{driveId}" — the path IS the permission.
-    //    Path-based check works on create too (no resource needed).
+    // ------------------------------------------------------------------
+    // 5. Applications — doc ID is "{uid}_{driveId}".
+    //    READ is authorized by the immutable owner FIELD (not the ID prefix)
+    //    so it provably matches the app's where("uid","==",uid) queries;
+    //    the ID prefix is still enforced on create as defence in depth.
+    //    get on a not-yet-existing doc is allowed (resource == null) so the
+    //    DriveDetail "no application yet" check keeps working.
+    // ------------------------------------------------------------------
     match /applications/{appId} {
-      allow read, write: if request.auth != null
-                         && appId.split('_')[0] == request.auth.uid;
+      allow get: if signedIn()
+                 && appId.split('_')[0] == request.auth.uid
+                 && (resource == null || resource.data.uid == request.auth.uid);
+      allow list: if signedIn() && resource.data.uid == request.auth.uid;
+      allow create: if signedIn()
+                    && appId.split('_')[0] == request.auth.uid
+                    && request.resource.data.uid == request.auth.uid
+                    && validApplication(request.resource.data);
+      allow update: if signedIn()
+                    && resource.data.uid == request.auth.uid
+                    && request.resource.data.uid == resource.data.uid
+                    && request.resource.data.driveId == resource.data.driveId
+                    && validApplication(request.resource.data);
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
 
-    // 5. Activities: public read (portfolios), owner-only writes,
-    //    Evidence Rule enforced at the database level: proof = a valid link
-    //    OR an attached compressed image (PRD §7.2).
+    // ------------------------------------------------------------------
+    // 6. Activities: public read (portfolios), owner-only writes.
+    //    Ownership is IMMUTABLE — an update can no longer move an activity
+    //    into another student's account. The Evidence Rule is enforced on
+    //    create AND update, so proof can never be stripped to zero.
+    // ------------------------------------------------------------------
     match /activities/{id} {
       allow read: if true;
-      allow create: if request.auth != null
+      allow create: if signedIn()
                     && request.resource.data.uid == request.auth.uid
-                    && (
-                      (request.resource.data.url is string
-                       && request.resource.data.url.matches('https?://.+'))
-                      || (request.resource.data.get('image', '') is string
-                          && request.resource.data.image.matches('^data:image/(jpeg|png|webp);base64,.+'))
-                    );
-      allow update, delete: if request.auth != null
-                    && resource.data.uid == request.auth.uid;
+                    && validActivity(request.resource.data)
+                    && hasProof(request.resource.data);
+      allow update: if signedIn()
+                    && resource.data.uid == request.auth.uid
+                    && request.resource.data.uid == resource.data.uid
+                    && validActivity(request.resource.data)
+                    && hasProof(request.resource.data);
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
   }
 }

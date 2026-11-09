@@ -9,6 +9,7 @@ import type { Application, Activity, Drive, Student } from "../lib/types";
 import { checkEligibility } from "../lib/eligibility";
 import { computeScore, streakDays } from "../lib/scoring";
 import { COPY } from "../lib/copy";
+import { epochMs } from "../lib/time";
 import { ScoreRing } from "../components/ScoreRing";
 import { CountdownChip } from "../components/CountdownChip";
 import { EmptyState } from "../components/EmptyState";
@@ -45,27 +46,47 @@ export function Dashboard() {
 
   useEffect(() => {
     // no orderBy anywhere: no composite-index dependency, ordering applied client-side
-    return onSnapshot(collection(db, "drives"), (s) =>
-      setDrives(s.docs.map((d) => ({ id: d.id, ...d.data() } as Drive)))
+    return onSnapshot(
+      collection(db, "drives"),
+      (s) => setDrives(s.docs.map((d) => ({ id: d.id, ...d.data() } as Drive))),
+      (err) => {
+        // never strand the page on an endless skeleton (audit: listener failures)
+        console.error("[DriveDeck] drives listener failed:", err);
+        setDrives([]);
+      },
     );
   }, [uid]);
 
   useEffect(() => {
     if (!uid) return;
-    return onSnapshot(query(collection(db, "applications"), where("uid", "==", uid)), (s) => {
-      const list = s.docs.map((d) => ({ id: d.id, ...d.data() } as Application));
-      list.sort((a, b) => b.updatedAt.toMillis() - a.updatedAt.toMillis());
-      setApps(list);
-    });
+    return onSnapshot(
+      query(collection(db, "applications"), where("uid", "==", uid)),
+      (s) => {
+        const list = s.docs.map((d) => ({ id: d.id, ...d.data() } as Application));
+        list.sort((a, b) => epochMs(b.updatedAt) - epochMs(a.updatedAt));
+        setApps(list);
+      },
+      (err) => {
+        console.error("[DriveDeck] applications listener failed:", err);
+        setApps([]);
+      },
+    );
   }, [uid]);
 
   useEffect(() => {
     if (!uid) return;
-    return onSnapshot(query(collection(db, "activities"), where("uid", "==", uid)), (s) => {
-      const list = s.docs.map((d) => ({ id: d.id, ...d.data() } as Activity));
-      list.sort((a, b) => b.date.toMillis() - a.date.toMillis());
-      setActs(list);
-    });
+    return onSnapshot(
+      query(collection(db, "activities"), where("uid", "==", uid)),
+      (s) => {
+        const list = s.docs.map((d) => ({ id: d.id, ...d.data() } as Activity));
+        list.sort((a, b) => epochMs(b.date) - epochMs(a.date));
+        setActs(list);
+      },
+      (err) => {
+        console.error("[DriveDeck] activities listener failed:", err);
+        setActs([]);
+      },
+    );
   }, [uid]);
 
   const loading = !drives || !apps || !acts || !profile;

@@ -6,6 +6,7 @@ import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import type { Activity, Student } from "../lib/types";
 import { COPY } from "../lib/copy";
+import { epochMs, toDateOrNull } from "../lib/time";
 import { ActivityRow } from "../components/ActivityRow";
 import { ActivityModal } from "../components/ActivityModal";
 import { EmptyState } from "../components/EmptyState";
@@ -30,18 +31,29 @@ export function Growth() {
 
   useEffect(() => {
     if (!uid) return;
-    return onSnapshot(query(collection(db, "activities"), where("uid", "==", uid)), (s) => {
-      const list = s.docs.map((d) => ({ id: d.id, ...d.data() } as Activity));
-      list.sort((a, b) => b.date.toMillis() - a.date.toMillis());
-      setActs(list);
-    });
+    return onSnapshot(
+      query(collection(db, "activities"), where("uid", "==", uid)),
+      (s) => {
+        const list = s.docs.map((d) => ({ id: d.id, ...d.data() } as Activity));
+        list.sort((a, b) => epochMs(b.date) - epochMs(a.date));
+        setActs(list);
+      },
+      (err) => {
+        // never strand the log on an endless skeleton (audit: listener failures)
+        console.error("[DriveDeck] activities listener failed:", err);
+        setActs([]);
+      },
+    );
   }, [uid]);
 
   const groups = useMemo(() => {
     if (!acts) return [];
     const byMonth = new Map<string, Activity[]>();
     for (const a of acts) {
-      const k = monthKey(a.date.toDate());
+      // a malformed / pending date must not crash the whole log (audit)
+      const d = toDateOrNull(a.date);
+      if (!d) continue;
+      const k = monthKey(d);
       const arr = byMonth.get(k);
       if (arr) arr.push(a);
       else byMonth.set(k, [a]);

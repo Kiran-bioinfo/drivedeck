@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { writeBatch, doc, serverTimestamp, getDoc } from "firebase/firestore";
+import { runTransaction, doc, serverTimestamp, getDoc } from "firebase/firestore";
 import { Loader2 } from "lucide-react";
 import { db } from "../lib/firebase";
 import type { Branch, TargetRole } from "../lib/types";
@@ -29,8 +29,11 @@ interface ProfileDraft {
 const GITHUB_RE = /^https:\/\/github\.com\//;
 const LINKEDIN_RE = /^https:\/\/linkedin\.com\/in\//;
 
-// PRD §F1 — 3 steps. Writes once, at the end, in one batch:
-// users/{uid} + usernames/{slug} (create-once via rules — taken slugs are denied).
+// PRD §F1 — 3 steps. Writes once, at the end, in ONE transaction:
+// users/{uid} (private) + portfolios/{uid} (public, display-safe) +
+// usernames/{slug} (create-once via rules — taken slugs are denied).
+// The transaction reads first, so a second tab / refresh cannot overwrite a
+// completed profile (audit: onboarding race).
 export function Onboarding() {
   const { user } = useAuth();
   const uid = user?.uid ?? null;
@@ -118,26 +121,61 @@ export function Onboarding() {
     setFinishErr(null);
     setSubmitting(true);
     try {
-      const batch = writeBatch(db);
-      batch.set(doc(db, "users", uid), {
-        name: draft.name.trim(),
-        email: user?.email ?? "",
-        college: draft.college.trim(),
-        branch: draft.branch,
-        year: draft.year,
-        targetRole: draft.targetRole,
-        tenth: Number(draft.tenth),
-        twelfth: Number(draft.twelfth),
-        cgpa: Number(draft.cgpa),
-        backlogs: Number(draft.backlogs),
-        githubUrl: draft.githubUrl.trim(),
-        linkedinUrl: draft.linkedinUrl.trim(),
-        portfolioSlug: slug,
-        createdAt: serverTimestamp(),
+      const outcome = await runTransaction(db, async (tx): Promise<"done" | "already" | "taken"> => {
+        const userRef = doc(db, "users", uid);
+        const slugRef = doc(db, "usernames", slug);
+        const [userSnap, slugSnap] = await Promise.all([tx.get(userRef), tx.get(slugRef)]);
+        // profile already complete (second tab / refresh) → nothing to write
+        if (userSnap.exists()) return "already";
+        // slug claimed in the race window → surface "taken" instead of failing
+        if (slugSnap.exists() && (slugSnap.data() as { uid?: string }).uid !== uid) return "taken";
+
+        const profile = {
+          name: draft.name.trim(),
+          email: user?.email ?? "",
+          college: draft.college.trim(),
+          branch: draft.branch,
+          year: draft.year,
+          targetRole: draft.targetRole,
+          tenth: Number(draft.tenth),
+          twelfth: Number(draft.twelfth),
+          cgpa: Number(draft.cgpa),
+          backlogs: Number(draft.backlogs),
+          githubUrl: draft.githubUrl.trim(),
+          linkedinUrl: draft.linkedinUrl.trim(),
+          portfolioSlug: slug,
+          createdAt: serverTimestamp(),
+        };
+        // private owner-only doc — email / marks / CGPA / backlogs stay here
+        tx.set(userRef, profile);
+        // PUBLIC portfolio doc — display-safe fields only; firestore.rules
+        // rejects anything outside that allow-list, so private data can't leak
+        tx.set(doc(db, "portfolios", uid), {
+          name: profile.name,
+          college: profile.college,
+          branch: profile.branch,
+          year: profile.year,
+          targetRole: profile.targetRole,
+          portfolioSlug: slug,
+          githubUrl: profile.githubUrl,
+          linkedinUrl: profile.linkedinUrl,
+          createdAt: serverTimestamp(),
+        });
+        // rules rule 3: create-only, immutable — a taken slug aborts the transaction
+        tx.set(slugRef, { uid });
+        return "done";
       });
-      // rules rule 2: create-only, immutable — a taken slug fails the whole batch
-      batch.set(doc(db, "usernames", slug), { uid });
-      await batch.commit();
+
+      if (outcome === "already") {
+        navigate("/dashboard", { replace: true });
+        return;
+      }
+      if (outcome === "taken") {
+        // slug claimed in the race window → back to step 2 with the inline taken message
+        setSlugStatus("taken");
+        setStep(2);
+        return;
+      }
       navigate("/dashboard");
     } catch (e) {
       const code = (e as { code?: string }).code ?? "";

@@ -34,9 +34,16 @@ export function checkEligibility(profile: Student | null, drive: Drive): Eligibi
     add("Branch", undefined, undefined, true, "", true);
   }
 
-  const anyCriterion = e.tenthMin != null || e.twelfthMin != null || e.cgpaMin != null || e.maxBacklogs != null;
+  const anyCriterion =
+    e.tenthMin != null ||
+    e.twelfthMin != null ||
+    e.cgpaMin != null ||
+    e.maxBacklogs != null ||
+    (e.branches != null && e.branches.length > 0);
   const missingProfile = profile == null || profile.cgpa == null;
-  const allPass = checks.every((c) => c.pass !== false);
+  // UNKNOWN is never a pass: a required value we don't have must fail the match
+  // instead of silently counting as eligible (audit: eligibility false match).
+  const allPass = checks.every((c) => c.pass === true);
   const match = !missingProfile && anyCriterion && allPass;
 
   return { match, checks, missingProfile, failedNote, criteriaPending: !anyCriterion };
