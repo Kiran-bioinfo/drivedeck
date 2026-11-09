@@ -185,17 +185,17 @@ export function Landing() {
             <h2 className="text-[22px] font-bold mb-1">{COPY.landing.navHow}</h2>
             <p className="text-white/70 text-[15px] mb-6">{COPY.landing.signInBody}</p>
           </Reveal>
-          <ol className="flex flex-col gap-3">
+          <ol className="flex flex-col sm:flex-row gap-3">
             {COPY.landing.howSteps.map((step, i) => (
-              <Reveal key={i} delay={i * 130}>
-                <li className="bg-white/10 rounded-xl p-4 flex items-center gap-3">
+              <Reveal key={i} delay={i * 130} className="flex-1">
+                <li className="bg-white/10 rounded-xl p-4 sm:p-5 h-full flex sm:flex-col items-center sm:items-center gap-3 sm:gap-2 sm:text-center">
                   <span
                     aria-hidden
                     className="w-7 h-7 rounded-full bg-white text-accent text-[13px] font-bold flex items-center justify-center shrink-0"
                   >
                     {i + 1}
                   </span>
-                  <span className="text-[15px]">{step}</span>
+                  <span className="text-[15px] sm:text-[14px] sm:leading-[1.5]">{step}</span>
                 </li>
               </Reveal>
             ))}
