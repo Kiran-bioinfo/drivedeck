@@ -121,9 +121,10 @@ export function HeroSection6({ onGetStarted }: HeroSection6Props) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="relative w-full min-h-screen overflow-hidden">
+      <div className="relative w-full overflow-hidden">
         {/* Background — calm wash: white core → cream → a whisper of blue at the
-            very edge (no projected-beam glow) */}
+            very edge (no projected-beam glow). Height is content-driven: no
+            min-h-screen, which forced a large empty band after the mockup. */}
         <div
           className="absolute inset-0 z-0"
           style={{
@@ -165,7 +166,7 @@ export function HeroSection6({ onGetStarted }: HeroSection6Props) {
         </nav>
 
         {/* Hero Content */}
-        <div className="relative z-10 flex flex-col items-center text-center pt-12 sm:pt-14 md:pt-16 px-4 pb-0 max-w-7xl mx-auto">
+        <div className="relative z-10 flex flex-col items-center text-center pt-12 sm:pt-14 md:pt-16 px-4 pb-14 sm:pb-16 md:pb-20 max-w-7xl mx-auto">
           <AnimatedGroup
             className="max-w-4xl xl:max-w-5xl mx-auto text-center flex flex-col items-center"
             variants={{
