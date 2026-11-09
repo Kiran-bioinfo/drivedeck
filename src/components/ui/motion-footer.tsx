@@ -69,7 +69,15 @@ const MarqueeItem = () => (
 
 export function CinematicFooter({ onGetStarted }: CinematicFooterProps) {
   return (
-    <footer className="relative w-full overflow-hidden bg-ink text-white">
+    <footer
+      className="relative w-full overflow-hidden text-white"
+      style={{
+        // Palette bridge: pure-ink floor felt disconnected from the site's blue
+        // family — this settles navy into the accent's neighborhood by the bottom
+        // edge, so footer and CTA/hero blues read as one system.
+        background: "linear-gradient(180deg, #0F172A 0%, #0E2350 55%, #143A8C 100%)",
+      }}
+    >
       {/* Ambient aurora glow (breathe) + subtle grid */}
       <div
         aria-hidden
@@ -92,8 +100,8 @@ export function CinematicFooter({ onGetStarted }: CinematicFooterProps) {
       />
 
       {/* 1. Diagonal marquee band */}
-      <div className="relative z-10 w-[104%] -ml-[2%] -rotate-1 md:-rotate-2 border-y border-white/10 bg-white/[0.05] backdrop-blur-md py-3 md:py-4 overflow-hidden shadow-2xl">
-        <div className="animate-marquee motion-reduce:animate-none flex w-max text-[11px] md:text-sm font-bold uppercase tracking-[0.3em] text-white/45">
+      <div className="relative z-10 w-[104%] -ml-[2%] -rotate-1 md:-rotate-2 border-y border-white/10 bg-[rgba(32,82,235,0.14)] backdrop-blur-md py-3 md:py-4 overflow-hidden shadow-2xl">
+        <div className="animate-marquee motion-reduce:animate-none flex w-max text-[11px] md:text-sm font-bold uppercase tracking-[0.3em] text-white/55">
           <MarqueeItem />
           <MarqueeItem />
         </div>
@@ -102,11 +110,23 @@ export function CinematicFooter({ onGetStarted }: CinematicFooterProps) {
       {/* 2. Center content */}
       <div className="relative z-10 flex flex-col items-center w-full max-w-5xl mx-auto px-5 pt-16 pb-10 md:pt-24 md:pb-14">
         <motion.h2
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={{ y: 40 }}
+          whileInView={{ y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ type: "spring", bounce: 0.15, duration: 0.9 }}
-          className="text-center text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter mb-9 md:mb-14 [background:linear-gradient(180deg,#fff_0%,rgba(255,255,255,0.45)_100%)] [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] [background-clip:text] [filter:drop-shadow(0_0_24px_rgba(79,70,229,0.35))]"
+          className="text-center text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter mb-9 md:mb-14"
+          style={{
+            // Inline (not Tailwind arbitrary classes): the `background:` shorthand
+            // utility resets background-clip to border-box, leaving transparent-fill
+            // text with no gradient to show — i.e. invisible. One style object keeps
+            // gradient + clip + fill atomic. End color is accent-tinted (#BFD0F7) so
+            // the heading ties into the site's blue palette instead of pure white.
+            background: "linear-gradient(180deg, #FFFFFF 0%, #BFD0F7 100%)",
+            WebkitBackgroundClip: "text",
+            backgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            filter: "drop-shadow(0 0 24px rgba(32,82,235,0.45))",
+          }}
         >
           {COPY.landing.ctaTitle}
         </motion.h2>
@@ -166,7 +186,7 @@ export function CinematicFooter({ onGetStarted }: CinematicFooterProps) {
         aria-hidden
         className="pointer-events-none select-none relative z-0 flex justify-center overflow-hidden h-[22vw] md:h-[24vw] max-h-[240px]"
       >
-        <span className="whitespace-nowrap font-black leading-[0.85] tracking-[-0.05em] text-[21vw] md:text-[24vw] text-transparent" style={{ WebkitTextStroke: "1px rgba(255,255,255,0.10)" }}>
+        <span className="whitespace-nowrap font-black leading-[0.85] tracking-[-0.05em] text-[21vw] md:text-[24vw] text-transparent" style={{ WebkitTextStroke: "1px rgba(125,160,245,0.16)" }}>
           DRIVEDECK
         </span>
       </div>
