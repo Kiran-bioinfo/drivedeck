@@ -146,18 +146,18 @@ export function HeroSection6({ onGetStarted }: HeroSection6Props) {
             ))}
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <button
               type="button"
               onClick={onGetStarted}
-              className="px-3 py-1 text-sm font-medium border border-ink/15 text-ink hover:bg-white/60 transition-colors rounded-sm"
+              className="hidden sm:block px-3.5 py-1.5 text-sm font-medium border border-ink/15 text-ink hover:bg-white/60 transition-colors rounded-sm"
             >
               {COPY.landing.secondaryCta}
             </button>
             <button
               type="button"
               onClick={onGetStarted}
-              className="px-3 py-1 text-sm font-medium bg-accent text-white hover:bg-accent/90 transition-colors rounded-sm"
+              className="px-3.5 py-1.5 text-sm font-semibold bg-accent text-white hover:bg-accent/90 transition-colors rounded-sm"
             >
               {COPY.landing.navGetStarted}
             </button>
@@ -165,9 +165,9 @@ export function HeroSection6({ onGetStarted }: HeroSection6Props) {
         </nav>
 
         {/* Hero Content */}
-        <div className="relative z-10 flex flex-col items-center text-center pt-14 md:pt-16 px-4 pb-0 max-w-7xl mx-auto">
+        <div className="relative z-10 flex flex-col items-center text-center pt-12 sm:pt-14 md:pt-16 px-4 pb-0 max-w-7xl mx-auto">
           <AnimatedGroup
-            className="max-w-4xl mx-auto text-center flex flex-col items-center"
+            className="max-w-4xl xl:max-w-5xl mx-auto text-center flex flex-col items-center"
             variants={{
               container: {
                 visible: {
@@ -179,27 +179,27 @@ export function HeroSection6({ onGetStarted }: HeroSection6Props) {
               item: textVariants,
             }}
           >
-            <p className="inline-flex w-fit items-center gap-1.5 h-8 px-3 rounded-full bg-white/60 backdrop-blur border border-ink/10 text-ink text-[13px] font-medium mb-4">
-              <BadgeCheck size={14} strokeWidth={2.5} aria-hidden className="text-success" />
-              {COPY.landing.trust}
+            <p className="inline-flex w-fit max-w-full items-center gap-1.5 h-9 px-4 rounded-full bg-white/60 backdrop-blur border border-ink/10 text-ink text-xs sm:text-sm font-medium mb-4 md:mb-5">
+              <BadgeCheck size={15} strokeWidth={2.5} aria-hidden className="text-success shrink-0" />
+              <span className="truncate">{COPY.landing.trust}</span>
             </p>
-            <h1 className="text-[30px] md:text-4xl lg:text-6xl font-bold tracking-tight text-ink mb-4 md:mb-5 leading-[1.1] px-2 md:px-0">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight text-ink mb-4 md:mb-5 leading-[1.08] sm:leading-[1.05] px-2 md:px-0">
               {COPY.landing.h1}
             </h1>
-            <p className="text-[15px] md:text-lg text-ink/60 max-w-[420px] md:max-w-lg mx-auto mb-6 md:mb-8">
+            <p className="text-base sm:text-lg md:text-xl text-ink/60 max-w-[92%] sm:max-w-lg md:max-w-xl mx-auto mb-6 md:mb-8">
               {COPY.landing.support}
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-4 w-[300px] sm:w-full mb-10 md:mb-14 mx-auto">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-center gap-3 md:gap-4 w-full max-w-[340px] mx-auto sm:max-w-none sm:w-auto mb-10 md:mb-14">
               <button
                 type="button"
                 onClick={onGetStarted}
-                className="w-full sm:w-auto px-6 py-2.5 text-[15px] md:text-base rounded-md bg-accent hover:bg-accent/90 text-white shadow-lg shadow-accent/20 transition-all hover:shadow-accent/30 cursor-pointer"
+                className="sm:w-auto px-7 py-3 text-[15px] sm:text-base md:text-[17px] rounded-md bg-accent hover:bg-accent/90 text-white shadow-lg shadow-accent/20 transition-all hover:shadow-accent/30 cursor-pointer"
               >
                 {COPY.landing.primaryCta}
               </button>
               <Link
                 to="/u/kiran"
-                className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 text-[15px] md:text-base rounded-md border border-ink/15 hover:bg-white/60 transition-colors cursor-pointer text-ink"
+                className="sm:w-auto inline-flex items-center justify-center px-7 py-3 text-[15px] sm:text-base md:text-[17px] rounded-md border border-ink/15 hover:bg-white/60 transition-colors cursor-pointer text-ink"
               >
                 {COPY.landing.secondaryCta}
               </Link>
