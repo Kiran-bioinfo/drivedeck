@@ -48,6 +48,19 @@ module.exports = {
           '0%':   { opacity: '0', transform: 'translateY(16px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+        marquee: {
+          from: { transform: 'translateX(0)' },
+          to:   { transform: 'translateX(-50%)' },
+        },
+        heartbeat: {
+          '0%, 100%': { transform: 'scale(1)' },
+          '15%, 45%': { transform: 'scale(1.25)' },
+          '30%':      { transform: 'scale(1)' },
+        },
+        breathe: {
+          '0%':   { transform: 'translate(-50%, -50%) scale(1)',   opacity: '0.55' },
+          '100%': { transform: 'translate(-50%, -50%) scale(1.12)', opacity: '1' },
+        },
       },
       animation: {
         'ring-fill': 'ring-fill 600ms ease-out forwards',
@@ -55,6 +68,9 @@ module.exports = {
         float:       'float 7s ease-in-out infinite',
         'float-slow': 'float 11s ease-in-out infinite',
         rise:        'rise 800ms ease-out both',
+        marquee:     'marquee 40s linear infinite',
+        heartbeat:   'heartbeat 2s cubic-bezier(0.25, 1, 0.5, 1) infinite',
+        breathe:     'breathe 8s ease-in-out infinite alternate',
       },
     },
   },

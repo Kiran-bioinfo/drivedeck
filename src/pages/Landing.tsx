@@ -8,6 +8,7 @@ import { COPY } from "../lib/copy";
 import { useAuth } from "../context/AuthContext";
 import { GoogleIcon } from "../components/GoogleIcon";
 import { HeroSection6 } from "../components/ui/hero-section-6";
+import { CinematicFooter } from "../components/ui/motion-footer";
 
 const CARD_ICONS = [BadgeCheck, FolderGit2, Award] as const;
 // reference pairing: dark panel + bright panel, in our blue/cream palette
@@ -185,49 +186,9 @@ export function Landing() {
         </div>
       </section>
 
-      {/* CTA band */}
-      <section className="max-w-[1024px] mx-auto px-4 py-12">
-        <Reveal>
-          <div className="bg-cream rounded-xl p-8 text-center">
-            <h2 className="text-[24px] font-bold text-ink mb-3">{COPY.landing.ctaTitle}</h2>
-            <p className="text-[15px] text-ink/70 max-w-[420px] mx-auto mb-6">{COPY.landing.signInBody}</p>
-            <button
-              type="button"
-              onClick={() => { setSignErr(null); setSignInOpen(true); }}
-              className="h-12 px-6 rounded-lg bg-brand text-white text-[15px] font-semibold hover:bg-brand-dark transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
-            >
-              {COPY.landing.primaryCta}
-            </button>
-          </div>
-        </Reveal>
-      </section>
-
-      <footer className="bg-ink text-white">
-        <div className="max-w-[1024px] mx-auto px-4 py-8 grid sm:grid-cols-3 gap-6">
-          <div>
-            <span className="font-bold text-lg text-white">DriveDeck</span>
-            <p className="text-[13px] text-white/60 mt-2">{COPY.landing.trust}</p>
-            <p className="text-[12px] text-white/40 mt-1">{COPY.landing.footer}</p>
-          </div>
-          <nav aria-label="Product" className="flex flex-col gap-2 text-[14px]">
-            <span className="font-semibold text-[13px] uppercase tracking-wide text-white/40 mb-1">Product</span>
-            <a href="#features" className="text-white/70 hover:text-white w-fit">{COPY.landing.navFeatures}</a>
-            <a href="#how" className="text-white/70 hover:text-white w-fit">{COPY.landing.navHow}</a>
-            <Link to="/resources" className="text-white/70 hover:text-white w-fit">{COPY.landing.navResources}</Link>
-          </nav>
-          <nav aria-label="Start" className="flex flex-col gap-2 text-[14px]">
-            <span className="font-semibold text-[13px] uppercase tracking-wide text-white/40 mb-1">Start</span>
-            <button
-              type="button"
-              onClick={() => { setSignErr(null); setSignInOpen(true); }}
-              className="text-white/70 hover:text-white text-left w-fit"
-            >
-              {COPY.landing.primaryCta}
-            </button>
-            <Link to="/u/kiran" className="text-white/70 hover:text-white w-fit">{COPY.landing.secondaryCta}</Link>
-          </nav>
-        </div>
-      </footer>
+      {/* cinematic footer — 21st.dev motion-footer design in DriveDeck palette;
+          doubles as the CTA band (old blush band folded into it) */}
+      <CinematicFooter onGetStarted={() => { setSignErr(null); setSignInOpen(true); }} />
 
       {signInOpen && (
         <div className="fixed inset-0 z-50 lg:grid lg:place-items-center">

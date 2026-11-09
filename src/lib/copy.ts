@@ -38,6 +38,17 @@ export const COPY = {
       "Save verified drives that match your profile.",
       "Log evidence with its link — your score and portfolio update themselves.",
     ],
+    footerMarquee: [
+      "Verified drives",
+      "Kanban application board",
+      "Auto-built portfolio",
+      "Zero fake dates",
+      "Free for students",
+    ],
+    footerRights: "© 2026 DriveDeck. All rights reserved.",
+    footerMadePre: "Made for",
+    footerMadePost: "JioCoder Hackathon 2026",
+    footerBackToTop: "Back to top",
   },
   nav: {
     home: "Home",
