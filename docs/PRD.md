@@ -537,7 +537,6 @@ implemented verbatim in `src/lib/copy.ts`, so this section keeps the rule "one c
 | 404 | Title / body / CTA | 404 / This page doesn't exist. / Back to home |
 | Landing | Sign-in card, title / body | Create your DriveDeck / One tap with Google — your board, score and portfolio are ready in 2 minutes. |
 | Landing | Sign-in button / loading / error | Continue with Google / Signing you in… / Google sign-in didn't open — allow popups for this site and try again. |
-| Landing | CTA band title | Your offer letter starts here. |
 | Landing | How-it-works steps | Sign in with Google — 2 minutes of setup, either setup. / Save verified drives that match your profile. / Log evidence with its link — your score and portfolio update themselves. |
 | Onboarding | Finish loading / offline error | Setting up your dashboard… / Couldn't save your profile — check your connection and try again. |
 | System | Design tokens (build-time, §8.1 extension) | accent `#2052EB` · blush `#FADBE5` — landing color panels |
@@ -545,7 +544,6 @@ implemented verbatim in `src/lib/copy.ts`, so this section keeps the rule "one c
 | Landing | Doodle crew footer, hackathon label (non-link) | Built for JioCoder Hackathon 2026 |
 | Landing | Doodle crew footer, crew member lines | Bruno (yeti): I eat fake deadlines. / Pip (bird): That date? I checked it myself. / Morel (mushroom): Small log today, big portfolio tomorrow. / Juno (kid): Watch me drag Saved to Offer. / Boo (ghost): Boo!… oh, your score went up. / Patch (cat): Arr. No forwards in my inbox. |
 | Landing | Doodle crew footer, explore links | Features / How it works / Resources |
-| Landing | Doodle crew footer, demo links | See a live portfolio |
 | Landing | Doodle crew footer, doodle kinds set | bolt, star, plane, heart, sparkle, flame |
 
 ### 7.2 Build-time addition: optional image on evidence (§ F5)

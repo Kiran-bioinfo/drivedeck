@@ -32,7 +32,6 @@ export const COPY = {
     signInButton: "Continue with Google",
     signInLoading: "Signing you in…",
     signInError: "Google sign-in didn't open — allow popups for this site and try again.",
-    ctaTitle: "Your offer letter starts here.",
     howSteps: [
       "Sign in with Google — 2 minutes of setup, either setup.",
       "Save verified drives that match your profile.",

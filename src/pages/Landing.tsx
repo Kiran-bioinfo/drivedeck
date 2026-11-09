@@ -8,7 +8,7 @@ import { COPY } from "../lib/copy";
 import { useAuth } from "../context/AuthContext";
 import { GoogleIcon } from "../components/GoogleIcon";
 import { HeroSection6 } from "../components/ui/hero-section-6";
-import DoodleCrewFooter, { type CrewMember, type FooterColumn, type FooterAction } from "../components/ui/doodle-crew-footer";
+import DoodleCrewFooter, { type CrewMember, type FooterColumn } from "../components/ui/doodle-crew-footer";
 
 const CARD_ICONS = [BadgeCheck, FolderGit2, Award] as const;
 // reference pairing: dark panel + bright panel, in our blue/cream palette
@@ -68,33 +68,22 @@ function navigateLater(e: React.MouseEvent) {
 }
 let FOOTER_NAV: ((to: string) => void) | null = null;
 
-/** DoodleCrewFooter wired to DriveDeck: navigate hook + sign-in action + palette. */
-function DoodleFooter({ onGetStarted }: { onGetStarted: () => void }) {
+/** DoodleCrewFooter wired to DriveDeck: navigate hook + palette. */
+function DoodleFooter() {
   const navigate = useNavigate();
   useEffect(() => {
     FOOTER_NAV = navigate;
     return () => { FOOTER_NAV = null; };
   }, [navigate]);
 
-  const actions: FooterAction[] = [
-    { label: COPY.landing.primaryCta, icon: "bolt", variant: "solid", onClick: onGetStarted },
-    {
-      label: COPY.landing.secondaryCta,
-      href: "/u/kiran",
-      icon: "plane",
-      variant: "outline",
-      onClick: (e) => { e?.preventDefault(); navigate("/u/kiran"); },
-    },
-  ];
-
   return (
     <DoodleCrewFooter
       wordmark="DRIVEDECK"
       brand="DriveDeck"
       blurb={COPY.landing.support}
-      tagline={COPY.landing.ctaTitle}
+      tagline=""
       columns={FOOTER_COLUMNS}
-      actions={actions}
+      actions={[]}
       copyright={COPY.landing.footerRights}
       legal={[{ label: COPY.landing.footer }]} // plain label, no dead links
       socials={[]}
@@ -268,10 +257,9 @@ export function Landing() {
         </div>
       </section>
 
-      {/* doodle crew footer (see DoodleFooter) — replaces the retired cinematic footer */}
       {/* doodle crew footer — sketchbook-scale footer with the DRIVEDECK crew;
           palette = paper/ink/accent tokens, every link is a real destination */}
-      <DoodleFooter onGetStarted={() => { setSignErr(null); setSignInOpen(true); }} />
+      <DoodleFooter />
 
       {signInOpen && (
         <div className="fixed inset-0 z-50 lg:grid lg:place-items-center">
