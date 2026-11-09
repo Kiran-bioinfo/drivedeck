@@ -14,6 +14,7 @@
 //   caller passes DriveDeck tokens explicitly (paper `#FFFDF8`, ink `#0F172A`,
 //   accent `#2052EB`).
 import * as React from "react"
+import { Logo } from "../Logo"
 
 // #region crew
 // Pure: wordmark layout, seats, gaze, the doodle drift and the storyboard timing.
@@ -1007,16 +1008,7 @@ export default function DoodleCrewFooter({
       <div className="dcf-top dcf-rise" style={{ "--d": "0ms" } as React.CSSProperties}>
         <div className="dcf-brand">
           <span className="dcf-logo" aria-hidden="true">
-            <svg viewBox="-60 -150 120 120" width="30" height="30">
-              <g className="dcf-art">
-                <path d="M-30 -104 C-40 -112 -44 -124 -40 -138 C-32 -129 -22 -122 -13 -114 Z" />
-                <path d="M18 -114 C26 -124 36 -130 47 -133 C45 -120 41 -110 32 -101 Z" />
-                <path d="M-44 -30 C-54 -56 -54 -70 -42 -90 C-32 -110 -14 -118 2 -118 C22 -118 40 -108 48 -88 C58 -68 56 -54 48 -30 Z" />
-                <circle className="k" cx="-15" cy="-84" r="5.5" />
-                <circle className="k" cx="13" cy="-86" r="5.5" />
-                <path className="n" d="M-12 -66 C-6 -60 6 -60 12 -67" />
-              </g>
-            </svg>
+            <Logo size={28} />
           </span>
           <span className="dcf-brandname">{brand}</span>
         </div>
