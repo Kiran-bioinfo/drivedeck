@@ -8,7 +8,7 @@ import { COPY } from "../lib/copy";
 import { useAuth } from "../context/AuthContext";
 import { GoogleIcon } from "../components/GoogleIcon";
 import { HeroSection6 } from "../components/ui/hero-section-6";
-import { CinematicFooter } from "../components/ui/motion-footer";
+import DoodleCrewFooter, { type CrewMember, type FooterColumn, type FooterAction } from "../components/ui/doodle-crew-footer";
 
 const CARD_ICONS = [BadgeCheck, FolderGit2, Award] as const;
 // reference pairing: dark panel + bright panel, in our blue/cream palette
@@ -25,6 +25,88 @@ const CARD_TILE = [
 const CARD_BODY = ["text-white/80", "text-ink/70", "text-white/70"] as const;
 
 const REDUCED = "(prefers-reduced-motion: reduce)";
+
+// Doodle-footer crew placements for the DRIVEDECK wordmark (D R I V E D E C K):
+// strings come from the copy deck (COPY.landing.footerCrew), layout lives here.
+const CREW_SEATS: [number, CrewMember["seat"] | undefined, number?][] = [
+  [0, "front", -0.32],  // yeti against the D
+  [2, "top", 0.02],     // bird on the I
+  [3, "front", 0.12],   // mushroom by the V
+  [5, "top", -0.05],    // kid on the D
+  [6, "behind", 0],     // ghost peeks over the E
+  [8, "front", 0.18],   // cat past the K
+];
+const CREW = COPY.landing.footerCrew.map((c, i): CrewMember => ({
+  kind: c.kind as CrewMember["kind"],
+  letter: CREW_SEATS[i][0],
+  seat: CREW_SEATS[i][1],
+  offset: CREW_SEATS[i][2],
+  name: c.name,
+  says: c.says,
+}));
+
+const FOOTER_COLUMNS: FooterColumn[] = [
+  { title: "Explore", links: [
+    { label: COPY.landing.navFeatures, href: "#features" },
+    { label: COPY.landing.navHow, href: "#how" },
+    { label: COPY.landing.navResources, href: "/resources", onClick: navigateLater },
+  ] },
+  { title: "Demo", links: [
+    { label: COPY.landing.secondaryCta, href: "/u/kiran", onClick: navigateLater },
+  ] },
+];
+
+/** SPA-friendly handler handed to plain anchors: router nav, href as fallback. */
+function navigateLater(e: React.MouseEvent) {
+  // preventDefault not needed if we let href do a full load; but full reload
+  // would re-run Firebase init per click — route internally instead once the
+  // router hook is in scope via a bound closure (see FOOTER_NAV).
+  if (FOOTER_NAV) {
+    e.preventDefault();
+    FOOTER_NAV(e.currentTarget.getAttribute("href") || "/");
+  }
+}
+let FOOTER_NAV: ((to: string) => void) | null = null;
+
+/** DoodleCrewFooter wired to DriveDeck: navigate hook + sign-in action + palette. */
+function DoodleFooter({ onGetStarted }: { onGetStarted: () => void }) {
+  const navigate = useNavigate();
+  useEffect(() => {
+    FOOTER_NAV = navigate;
+    return () => { FOOTER_NAV = null; };
+  }, [navigate]);
+
+  const actions: FooterAction[] = [
+    { label: COPY.landing.primaryCta, icon: "bolt", variant: "solid", onClick: onGetStarted },
+    {
+      label: COPY.landing.secondaryCta,
+      href: "/u/kiran",
+      icon: "plane",
+      variant: "outline",
+      onClick: (e) => { e?.preventDefault(); navigate("/u/kiran"); },
+    },
+  ];
+
+  return (
+    <DoodleCrewFooter
+      wordmark="DRIVEDECK"
+      brand="DriveDeck"
+      blurb={COPY.landing.support}
+      tagline={COPY.landing.ctaTitle}
+      columns={FOOTER_COLUMNS}
+      actions={actions}
+      copyright={COPY.landing.footerRights}
+      legal={[{ label: COPY.landing.footer }]} // plain label, no dead links
+      socials={[]}
+      backToTop
+      crew={CREW}
+      doodles={["bolt", "star", "plane", "heart", "sparkle", "flame", "plane", "star"]}
+      doodleCount={10}
+      palette={{ background: "#FFFDF8", ink: "#0F172A", accent: "#2052EB" }}
+      height="700px"
+    />
+  );
+}
 
 // scroll-triggered entrance — IntersectionObserver, no deps
 function Reveal({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
@@ -186,9 +268,10 @@ export function Landing() {
         </div>
       </section>
 
-      {/* cinematic footer — 21st.dev motion-footer design in DriveDeck palette;
-          doubles as the CTA band (old blush band folded into it) */}
-      <CinematicFooter onGetStarted={() => { setSignErr(null); setSignInOpen(true); }} />
+      {/* doodle crew footer (see DoodleFooter) — replaces the retired cinematic footer */}
+      {/* doodle crew footer — sketchbook-scale footer with the DRIVEDECK crew;
+          palette = paper/ink/accent tokens, every link is a real destination */}
+      <DoodleFooter onGetStarted={() => { setSignErr(null); setSignInOpen(true); }} />
 
       {signInOpen && (
         <div className="fixed inset-0 z-50 lg:grid lg:place-items-center">

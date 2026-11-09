@@ -541,10 +541,12 @@ implemented verbatim in `src/lib/copy.ts`, so this section keeps the rule "one c
 | Landing | How-it-works steps | Sign in with Google — 2 minutes of setup, either setup. / Save verified drives that match your profile. / Log evidence with its link — your score and portfolio update themselves. |
 | Onboarding | Finish loading / offline error | Setting up your dashboard… / Couldn't save your profile — check your connection and try again. |
 | System | Design tokens (build-time, §8.1 extension) | accent `#2052EB` · blush `#FADBE5` — landing color panels |
-| Landing | Cinematic footer, marquee items | Verified drives / Kanban application board / Auto-built portfolio / Zero fake dates / Free for students |
-| Landing | Cinematic footer, rights line | © 2026 DriveDeck. All rights reserved. |
-| Landing | Cinematic footer, made-for lines | Made for / JioCoder Hackathon 2026 |
-| Landing | Cinematic footer, back-to-top label | Back to top (aria-label) |
+| Landing | Doodle crew footer, rules line | © 2026 DriveDeck. All rights reserved. |
+| Landing | Doodle crew footer, hackathon label (non-link) | Built for JioCoder Hackathon 2026 |
+| Landing | Doodle crew footer, crew member lines | Bruno (yeti): I eat fake deadlines. / Pip (bird): That date? I checked it myself. / Morel (mushroom): Small log today, big portfolio tomorrow. / Juno (kid): Watch me drag Saved to Offer. / Boo (ghost): Boo!… oh, your score went up. / Patch (cat): Arr. No forwards in my inbox. |
+| Landing | Doodle crew footer, explore links | Features / How it works / Resources |
+| Landing | Doodle crew footer, demo links | See a live portfolio |
+| Landing | Doodle crew footer, doodle kinds set | bolt, star, plane, heart, sparkle, flame |
 
 ### 7.2 Build-time addition: optional image on evidence (§ F5)
 
