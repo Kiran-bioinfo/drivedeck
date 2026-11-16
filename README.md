@@ -5,6 +5,14 @@ and an auto-built public portfolio. Built for the JioCoder Hackathon 2026.
 
 See `docs/PRD.md`, `docs/Architecture.md`, `docs/Design.md`, `docs/RULES.md`.
 
+## Architecture
+
+![DriveDeck application architecture: React SPA on Cloudflare Pages, Google sign-in via Firebase Auth, Cloud Firestore behind owner-scoped security rules, and Admin-SDK seed scripts](docs/assets/drivedeck-application.png)
+
+React 18/Vite SPA served from Cloudflare Pages, Google sign-in via Firebase Auth, and
+Cloud Firestore behind owner-scoped security rules. The Admin-SDK seed and backfill
+scripts are the only writers outside that boundary.
+
 ## Why `motion` (sixth runtime dependency)
 
 `Architecture.md` Sheet 8.1 caps runtime dependencies at five and requires written
